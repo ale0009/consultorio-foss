@@ -3,509 +3,129 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Consultorio FOSS</title>
-  <meta name="description" content="Versión de muestra del Consultorio de Informática basado en software libre: la investigación de Mario Puerta y David Rincón «Kuronoma» y una demo del motor de decisión multicriterio RCI.">
+  <title>¿Es APTO? · Evaluador de software libre</title>
+  <meta name="description" content="¿Este software libre es apto para tu organización? Puntúa 12 criterios y recibe al instante el veredicto APTO, CONDICIONAL o NO APTO con la rúbrica RCI de una investigación de la Universidad ECCI.">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' fill='%23F9F9F7' stroke='%230A090A' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23CB433E'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/herramienta.css">
   <script>
-    // Aplica el tema guardado antes de pintar, para evitar parpadeo.
     try { const t = localStorage.getItem('tema'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/herramienta.js"></script>
 </head>
-<body>
-  <a class="saltar" href="#contenido">Saltar al contenido</a>
+<body class="pagina-herramienta">
+  <a class="saltar" href="#evaluador">Saltar al evaluador</a>
 
   <header class="cabecera">
     <div class="cabecera__fila">
-      <a class="marca" href="#inicio" aria-label="Consultorio FOSS, ir al inicio">
+      <a class="marca" href="./" aria-label="¿Es APTO?, inicio">
         <span class="marca__sello" aria-hidden="true"></span>
-        <span class="marca__texto">Consultorio<b>FOSS</b></span>
+        <span class="marca__texto">¿Es<b>APTO</b>?</span>
       </a>
-      <button class="boton-menu" type="button" aria-expanded="false" aria-controls="menu">Menú</button>
-      <nav id="menu" class="menu" aria-label="Secciones">
-        <ul>
-          <li><a href="#quienes">Quiénes somos</a></li>
-          <li><a href="#investigacion">Investigación</a></li>
-          <li><a href="#motor">Motor RCI</a></li>
-          <li><a href="#diagnostico">Diagnóstico</a></li>
-          <li><a href="#arquitectura">Arquitectura</a></li>
-          <li><a href="#calidad">Calidad</a></li>
-          <li><a href="#resultados">Resultados</a></li>
-        </ul>
-      </nav>
+      <a class="enlace-proceso" href="proceso/">Cómo se hizo <span aria-hidden="true">→</span></a>
       <button class="boton-tema" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/></svg>
       </button>
     </div>
   </header>
 
-  <main id="contenido">
+  <main id="evaluador" class="herramienta">
+    <div class="herramienta__rejilla contenedor">
 
-    <!-- 1. PORTADA -->
-    <section id="inicio" class="portada" aria-labelledby="titulo-portada">
-      <div class="contenedor portada__rejilla">
-        <div class="viñeta viñeta--grande portada__principal">
-          <p class="antetitulo">Investigación aplicada · Ingeniería de Sistemas · 2026</p>
-          <h1 id="titulo-portada">Elegir software libre <span class="tinta-roja">con método</span>, no a ciegas.</h1>
-          <p class="entradilla">El <strong>Consultorio FOSS</strong> es un modelo de consultorio universitario de informática que ayuda a PYMES y organizaciones a diagnosticar sus necesidades, evaluar alternativas de software libre y de código abierto (FOSS) con una rúbrica de 12 criterios, y acompañar la adopción paso a paso.</p>
-          <div class="acciones">
-            <a class="boton boton--primario" href="#motor">Probar el motor RCI</a>
-            <a class="boton" href="#investigacion">Leer la investigación</a>
-          </div>
-          <p class="nota-muestra">Versión de muestra, independiente y reimplementada desde cero. La original pertenece a la Universidad ECCI.</p>
-        </div>
+      <form class="panel-entrada" id="form" onsubmit="return false" aria-labelledby="titulo">
+        <h1 id="titulo" class="titulo-herramienta">¿Este software libre es <span class="tinta-roja">APTO</span> para tu organización?</h1>
 
-        <div class="portada__datos" aria-label="El problema en cifras (DANE, 2022)" role="group">
-          <div class="viñeta dato">
-            <span class="dato__cifra">68 %</span>
-            <span class="dato__texto">de las micro y pequeñas empresas colombianas usa software propietario <strong>sin licencia válida</strong>.</span>
+        <div class="ficha viñeta">
+          <div class="ficha__fila">
+            <label class="campo campo--nombre">
+              <span class="campo__etiqueta">Software</span>
+              <input id="nombre" type="text" maxlength="60" autocomplete="off" placeholder="Ej.: Nextcloud">
+            </label>
+            <label class="campo">
+              <span class="campo__etiqueta">Categoría <span class="campo__nota">(cambia los pesos)</span></span>
+              <select id="categoria"></select>
+            </label>
           </div>
-          <div class="viñeta dato">
-            <span class="dato__cifra">71 %</span>
-            <span class="dato__texto">señala el <strong>costo de licencias</strong> como la barrera principal para su transformación digital.</span>
-          </div>
-          <div class="viñeta dato dato--acento">
-            <span class="dato__cifra">12 %</span>
-            <span class="dato__texto">ha adoptado alguna herramienta FOSS. Fuente de las tres cifras: DANE (2022), citado en la investigación.</span>
-          </div>
-          <blockquote class="globo">
-            <p>No por falta de alternativas, sino por falta de conocimiento, capacidad de evaluación y acompañamiento.</p>
-          </blockquote>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. QUIÉNES SOMOS -->
-    <section id="quienes" class="seccion" aria-labelledby="titulo-quienes">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 01</span>
-          <h2 id="titulo-quienes">Quiénes somos</h2>
-          <p class="seccion__intro">Ingenieros de Sistemas de la Universidad ECCI (2026). Hicimos esta investigación como trabajo de grado dentro del semillero SigestECCI y ahora la mostramos en una versión propia.</p>
-        </header>
-        <div class="rejilla rejilla--2">
-          <article class="viñeta persona">
-            <div class="persona__inicial" aria-hidden="true">MP</div>
-            <div>
-              <h3>Mario Puerta</h3>
-              <p class="persona__nombre-completo">Mario Alejandro Puerta Alarcón</p>
-              <p>Ingeniero de Sistemas. Coautor de la investigación y el desarrollo.</p>
-              <p><a class="enlace" href="https://github.com/ale0009" rel="noopener">GitHub · ale0009</a></p>
+          <div class="ficha__barra">
+            <p class="insignia-ejemplo" id="insignia-ejemplo"><span class="etiqueta-ejemplo">Ejemplo</span> LibreOffice con los porcentajes de un caso de prueba de la investigación. Cámbialo todo.</p>
+            <div class="ficha__botones">
+              <button type="button" class="boton boton--chico" id="limpiar">Empezar de cero</button>
+              <button type="button" class="boton boton--chico" id="ejemplo">Ver ejemplo</button>
             </div>
-          </article>
-          <article class="viñeta persona">
-            <div class="persona__inicial persona__inicial--cian" aria-hidden="true">DK</div>
-            <div>
-              <h3>David Rincón <span class="alias">«Kuronoma»</span></h3>
-              <p class="persona__nombre-completo">David Alexander Rincón Corredor</p>
-              <p>Ingeniero de Sistemas. Coautor de la investigación y el desarrollo.</p>
-              <p><a class="enlace" href="https://www.linkedin.com/in/davidalexanderrinconcorredorkuronoma/" rel="noopener">LinkedIn · David Rincón «Kuronoma»</a></p>
+          </div>
+
+          <details class="github" id="github">
+            <summary><span class="github__icono" aria-hidden="true"></span> Traer licencia y comunidad desde GitHub <span class="campo__nota">(opcional)</span></summary>
+            <div class="github__cuerpo">
+              <div class="github__fila">
+                <label class="campo">
+                  <span class="campo__etiqueta">Repositorio</span>
+                  <input id="repo" type="text" autocomplete="off" spellcheck="false" placeholder="dueño/repo o URL de GitHub" value="LibreOffice/core">
+                </label>
+                <button type="button" class="boton boton--chico" id="consultar">Consultar</button>
+              </div>
+              <p class="pie">Usa la API pública de GitHub, sin cuenta: 60 consultas por hora. Solo sugiere C1, C2 y C3, los criterios que la investigación marca como extraíbles del repositorio.</p>
+              <div id="github-estado" aria-live="polite"></div>
             </div>
-          </article>
-        </div>
-        <p class="aparte">Qué hacemos: unir <strong>investigación</strong> (problema, método, evidencia) con <strong>ingeniería de software</strong> (arquitectura, pruebas, seguridad) para producir herramientas que se puedan auditar y reutilizar.</p>
-      </div>
-    </section>
-
-    <!-- 3. LA INVESTIGACIÓN -->
-    <section id="investigacion" class="seccion seccion--trama" aria-labelledby="titulo-investigacion">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 02</span>
-          <h2 id="titulo-investigacion">La investigación</h2>
-          <p class="seccion__intro">Trabajo de grado «Propuesta de implementación de un Consultorio de Informática en la Universidad ECCI, basado en software libre». Resumen fiel de sus partes principales.</p>
-        </header>
-
-        <div class="rejilla rejilla--3">
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">El problema</h3>
-            <p>Existe un ecosistema maduro de software libre para casi cualquier necesidad, pero las organizaciones pequeñas no lo adoptan: les falta saber qué existe, cómo evaluarlo y quién las acompañe.</p>
-            <p>La investigación cita además que el <strong>73 %</strong> de los tomadores de decisiones desconoce alternativas de código abierto para sus necesidades (CEPAL, 2022).</p>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">La pregunta</h3>
-            <p class="cita-larga">¿Cómo diseñar e implementar un consultorio universitario de informática basado en software libre que provea asesoría tecnológica efectiva, metodológicamente fundamentada y sostenible, generando a la vez impacto social y valor formativo?</p>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Objetivo general</h3>
-            <p>Desarrollar un prototipo funcional (MVP: producto mínimo viable, la versión más pequeña que ya sirve) que integre un diagnóstico estructurado, un motor de evaluación multicriterio y una plataforma que opere la asesoría de extremo a extremo.</p>
-          </article>
+          </details>
         </div>
 
-        <h3 class="subtitulo">Tres objetivos específicos, tres instrumentos</h3>
-        <ol class="rejilla rejilla--3 lista-limpia">
-          <li class="viñeta instrumento">
-            <span class="instrumento__num" aria-hidden="true">1</span>
-            <h4>Banco de Preguntas Diagnósticas</h4>
-            <p><strong>275 preguntas</strong> de tipo Sí/No en <strong>11 categorías</strong> tecnológicas; cada pregunta está ligada a un criterio de la rúbrica.</p>
-          </li>
-          <li class="viñeta instrumento">
-            <span class="instrumento__num" aria-hidden="true">2</span>
-            <h4>Rúbrica Científica Integral (RCI)</h4>
-            <p>Motor MCDA (análisis de decisión multicriterio: combinar varios criterios con pesos para decidir) con <strong>12 criterios ponderados</strong> que clasifica el software como APTO, CONDICIONAL o NO APTO.</p>
-          </li>
-          <li class="viñeta instrumento">
-            <span class="instrumento__num" aria-hidden="true">3</span>
-            <h4>Sistema de Seguimiento Metodológico (SSM)</h4>
-            <p>Flujo de trabajo de <strong>7 fases</strong> que registra y audita cada caso de asesoría, desde la solicitud hasta el seguimiento posterior.</p>
-          </li>
-        </ol>
+        <fieldset class="tablero" id="tablero">
+          <legend class="tablero__leyenda">Puntúa cada criterio <span class="campo__nota">1 crítico · 5 excelente · toca o pasa el cursor sobre un nivel para ver qué significa</span></legend>
+          <div class="tablero__lista" id="criterios"></div>
+        </fieldset>
+      </form>
 
-        <h3 class="subtitulo">El SSM en siete viñetas</h3>
-        <ol class="tira" aria-label="Las siete fases del Sistema de Seguimiento Metodológico">
-          <li class="tira__vineta"><span class="tira__n">1</span>Registro del caso</li>
-          <li class="tira__vineta"><span class="tira__n">2</span>Diagnóstico estructurado (AS-IS / TO-BE)</li>
-          <li class="tira__vineta"><span class="tira__n">3</span>Análisis de necesidades</li>
-          <li class="tira__vineta"><span class="tira__n">4</span>Selección de software candidato</li>
-          <li class="tira__vineta"><span class="tira__n">5</span>Evaluación con la RCI</li>
-          <li class="tira__vineta"><span class="tira__n">6</span>Recomendación</li>
-          <li class="tira__vineta"><span class="tira__n">7</span>Seguimiento post-implementación</li>
-        </ol>
-        <p class="pie">AS-IS es la situación tecnológica actual de la organización; TO-BE, la deseada tras adoptar el software recomendado.</p>
-
-        <div class="rejilla rejilla--2 separado">
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Metodología</h3>
-            <ul class="lista">
-              <li><strong>Tipo:</strong> investigación aplicada, descriptiva-propositiva.</li>
-              <li><strong>Enfoque:</strong> desarrollo iterativo e incremental (principios ágiles) para un equipo de dos personas, en <strong>8 fases</strong>: diagnóstico, diseño, iteraciones AUTH, SSM, RCI y Dashboard, integración y pruebas, documentación.</li>
-              <li><strong>Duración:</strong> seis meses (mayo a octubre de 2025), alrededor de 26 semanas.</li>
-              <li><strong>Verificación nivel 1 (hecha):</strong> 13 casos de prueba de sistema, 8 escenarios de aceptación y 6 casos del motor RCI, ejecutados por los dos autores asumiendo los tres roles.</li>
-              <li><strong>Validación nivel 2 (trabajo futuro):</strong> al menos 30 casos reales, análisis estadístico y encuestas de satisfacción.</li>
-            </ul>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Fundamentos teóricos</h3>
-            <p>La rúbrica triangula tres perspectivas para no sesgarse ni hacia el purismo ni hacia el pragmatismo:</p>
-            <ul class="lista">
-              <li><strong>Ética del software libre</strong> (FSF y sus cuatro libertades) → C1 Licencia.</li>
-              <li><strong>Pragmatismo del código abierto</strong> (OSI; modelo bazar de Raymond) → C3 Comunidad.</li>
-              <li><strong>Calidad de producto</strong> (ISO/IEC 25010) → C4 Funcionalidad, C5 Usabilidad, C6 Interoperabilidad.</li>
-              <li>Además: MCDA (fórmula de suma ponderada), costo total de propiedad (TCO) → C12, rúbricas analíticas con descriptores ancla, racionalidad acotada y aprendizaje situado.</li>
-            </ul>
-          </article>
+      <aside class="hud viñeta" id="hud" aria-labelledby="hud-titulo">
+        <span class="hud__kanji" aria-hidden="true">適</span>
+        <h2 id="hud-titulo" class="hud__titulo">Veredicto</h2>
+        <p class="hud__software" id="hud-software">LibreOffice</p>
+        <div class="hud__sello-caja">
+          <p class="sello sello--grande" id="sello" data-clase="APTO">APTO</p>
+          <span class="onomatopeya" id="onomatopeya" aria-hidden="true">¡TAC!</span>
         </div>
-
-        <article class="viñeta separado">
-          <h3 class="viñeta__titulo">Estado del arte: la RCI frente a marcos internacionales</h3>
-          <p>La investigación comparó la rúbrica con cuatro marcos de evaluación de software libre. Los criterios de escalabilidad (C10) y personalización (C7) faltan en todos ellos; la RCI es la única que cubre los 12.</p>
-          <div class="tabla-desplazable" role="region" aria-label="Tabla comparativa de marcos de evaluación FOSS" tabindex="0">
-            <table class="tabla">
-              <caption class="sr-only">Cobertura de criterios por marco de evaluación</caption>
-              <thead>
-                <tr><th scope="col">Criterio</th><th scope="col">OpenBRR <small>2005</small></th><th scope="col">QSOS <small>2004</small></th><th scope="col">EvdEN <small>2009</small></th><th scope="col">BasicMet <small>2011</small></th><th scope="col">RCI</th></tr>
-              </thead>
-              <tbody id="tabla-marcos"></tbody>
+        <p class="hud__ptotal"><span class="hud__etiqueta">P<sub>total</sub></span> <output id="ptotal">3,93</output><span class="hud__max">/ 5</span></p>
+        <div class="medidor" aria-hidden="true">
+          <div class="medidor__barra"><div class="medidor__relleno" id="medidor"></div><span class="medidor__umbral" style="left:37.5%"></span><span class="medidor__umbral" style="left:68.75%"></span></div>
+          <div class="medidor__marcas"><span style="left:0%">1</span><span style="left:37.5%">2,50</span><span style="left:68.75%">3,75</span><span style="left:100%">5</span></div>
+        </div>
+        <dl class="metricas">
+          <div><dt>σ <span class="metricas__def">qué tan parejo es el perfil (0 = todo igual)</span></dt><dd id="sigma">0,00</dd></div>
+          <div><dt>I<sub>min</sub> <span class="metricas__def">criterios en 3 o más</span></dt><dd id="imin">12/12</dd></div>
+        </dl>
+        <div class="freno" id="freno" aria-live="off"></div>
+        <p class="sr-only" aria-live="polite" id="anuncio"></p>
+        <details class="aportes">
+          <summary>Ver la cuenta (C<sub>i</sub> × w<sub>i</sub>)</summary>
+          <div class="tabla-desplazable" role="region" aria-label="Aporte de cada criterio" tabindex="0">
+            <table class="tabla tabla--compacta">
+              <thead><tr><th scope="col">Criterio</th><th scope="col">C<sub>i</sub></th><th scope="col">w<sub>i</sub></th><th scope="col">Aporte</th></tr></thead>
+              <tbody id="tabla-aportes"></tbody>
             </table>
           </div>
-          <p class="pie">Los antecedentes se revisaron en tres niveles: internacionales (marcos de evaluación y modelos de consultoría universitaria), nacionales y latinoamericanos (adopción tecnológica en PYMES) e institucionales (trayectoria del semillero SigestECCI).</p>
-        </article>
-      </div>
-    </section>
+          <p class="pie">P<sub>total</sub> = Σ C<sub>i</sub> × w<sub>i</sub>. APTO ≥ 3,75 · CONDICIONAL ≥ 2,50 · NO APTO &lt; 2,50.</p>
+        </details>
+        <a class="hud__enlace" href="proceso/">De dónde salen los criterios y los pesos <span aria-hidden="true">→</span></a>
+      </aside>
+    </div>
 
-    <!-- 4. DEMO DEL MOTOR -->
-    <section id="motor" class="seccion" aria-labelledby="titulo-motor">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 03</span>
-          <h2 id="titulo-motor">Demo: el motor de decisión RCI</h2>
-          <p class="seccion__intro">Puntúe un software en los 12 criterios (1 = crítico, 5 = excelente). El motor aplica los pesos de la categoría y calcula en vivo el puntaje ponderado y la clasificación.</p>
-        </header>
-
-        <div class="formula viñeta" aria-label="Fórmulas del motor">
-          <p class="formula__principal"><span>P<sub>total</sub> = Σ (C<sub>i</sub> × w<sub>i</sub>)</span><span class="formula__cond">con Σ w<sub>i</sub> = 1</span></p>
-          <ul class="umbrales">
-            <li class="umbral umbral--apto"><b>APTO</b> P<sub>total</sub> ≥ 3,75</li>
-            <li class="umbral umbral--cond"><b>CONDICIONAL</b> 2,50 ≤ P<sub>total</sub> &lt; 3,75</li>
-            <li class="umbral umbral--no"><b>NO APTO</b> P<sub>total</sub> &lt; 2,50</li>
-          </ul>
-        </div>
-
-        <div class="demo">
-          <form class="viñeta demo__entrada" id="form-motor" aria-describedby="ayuda-motor" onsubmit="return false">
-            <div class="demo__controles">
-              <label class="campo">
-                <span class="campo__etiqueta">Software</span>
-                <input id="nombre-software" type="text" value="LibreOffice" maxlength="60" autocomplete="off">
-              </label>
-              <label class="campo">
-                <span class="campo__etiqueta">Categoría (vector de pesos)</span>
-                <select id="categoria"></select>
-              </label>
-            </div>
-            <div class="demo__botones">
-              <button type="button" class="boton boton--chico" id="cargar-ejemplo">Cargar ejemplo: LibreOffice</button>
-              <button type="button" class="boton boton--chico" id="reiniciar">Reiniciar (todo en 3)</button>
-            </div>
-            <p id="ayuda-motor" class="pie"><span class="etiqueta-ejemplo">Ejemplo</span> El ejemplo usa los porcentajes de respuestas «Sí» por criterio de un caso de prueba de la investigación y los convierte a la escala 1–5 (≥ 90 % → 5, ≥ 75 % → 4, ≥ 50 % → 3, ≥ 25 % → 2, menos → 1). Son valores ilustrativos, no una evaluación oficial.</p>
-            <fieldset class="criterios">
-              <legend class="sr-only">Puntaje por criterio</legend>
-              <div id="lista-criterios"></div>
-            </fieldset>
-          </form>
-
-          <aside class="viñeta demo__resultado" aria-labelledby="titulo-resultado">
-            <h3 id="titulo-resultado" class="viñeta__titulo">Resultado</h3>
-            <p class="resultado__software" id="resultado-nombre">LibreOffice</p>
-            <div class="medidor" aria-hidden="true">
-              <div class="medidor__barra"><div class="medidor__relleno" id="medidor-relleno"></div></div>
-              <div class="medidor__marcas"><span style="left:0%">1</span><span style="left:37.5%">2,50</span><span style="left:68.75%">3,75</span><span style="left:100%">5</span></div>
-            </div>
-            <p class="resultado__ptotal"><span class="sr-only">Puntaje total: </span><output id="ptotal" for="lista-criterios categoria">3,00</output><span class="resultado__max">/ 5</span></p>
-            <p class="sello" id="sello" data-clase="CONDICIONAL">CONDICIONAL</p>
-            <p class="sr-only" aria-live="polite" id="anuncio"></p>
-            <dl class="metricas">
-              <div><dt title="Desviación estándar: qué tan parejos son los 12 puntajes">σ (homogeneidad)</dt><dd id="sigma">0,00</dd></div>
-              <div><dt title="Fracción de criterios con puntaje 3 o más">I<sub>min</sub> (cumplimiento)</dt><dd id="imin">100 %</dd></div>
-            </dl>
-            <p class="pie" id="explicacion"></p>
-            <details class="aportes">
-              <summary>Ver aporte de cada criterio (C<sub>i</sub> × w<sub>i</sub>)</summary>
-              <div class="tabla-desplazable" role="region" aria-label="Aportes por criterio" tabindex="0">
-                <table class="tabla tabla--compacta">
-                  <thead><tr><th scope="col">Criterio</th><th scope="col">C<sub>i</sub></th><th scope="col">w<sub>i</sub></th><th scope="col">Aporte</th></tr></thead>
-                  <tbody id="tabla-aportes"></tbody>
-                </table>
-              </div>
-            </details>
-          </aside>
-        </div>
-        <p class="pie">Lógica en <code>js/motor.js</code> (funciones puras con pruebas <code>node --test</code>). Los pesos de las 11 categorías son los de la investigación; por ejemplo, en Seguridad y Datos Críticos el criterio C9 pesa 0,15 frente a 0,09 en Ofimática.</p>
-      </div>
-    </section>
-
-    <!-- 5. DIAGNÓSTICO -->
-    <section id="diagnostico" class="seccion seccion--trama" aria-labelledby="titulo-diagnostico">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 04</span>
-          <h2 id="titulo-diagnostico">Diagnóstico rápido</h2>
-          <p class="seccion__intro">Diez preguntas reales del Banco de Preguntas Diagnósticas (criterio C4, Funcionalidad). Responda pensando en su organización: <em>¿necesita un software que…?</em> El resultado sugiere la categoría por la que empezar.</p>
-        </header>
-        <div class="demo demo--diagnostico">
-          <form class="viñeta" id="form-diagnostico" onsubmit="return false">
-            <ol class="preguntas lista-limpia" id="lista-preguntas"></ol>
-          </form>
-          <aside class="viñeta diagnostico__resultado" aria-labelledby="titulo-diag-res">
-            <h3 id="titulo-diag-res" class="viñeta__titulo">Categoría sugerida</h3>
-            <div id="diag-resultado" aria-live="polite">
-              <p>Responda al menos una pregunta con «Sí».</p>
-            </div>
-            <p class="pie">Simplificación demostrativa: en el sistema original el banco completo (275 preguntas) se aplica en la fase 2 del SSM, guiado por un consultor.</p>
-          </aside>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. ARQUITECTURA -->
-    <section id="arquitectura" class="seccion" aria-labelledby="titulo-arquitectura">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 05</span>
-          <h2 id="titulo-arquitectura">Arquitectura del sistema original</h2>
-          <p class="seccion__intro">Aplicación de página única (SPA) en tres capas sobre un backend como servicio (BaaS: base de datos, autenticación y API gestionadas por un proveedor). Stack íntegramente FOSS y costo de infraestructura igual a cero.</p>
-        </header>
-
-        <figure class="viñeta diagrama">
-          <svg viewBox="0 0 960 520" role="img" aria-labelledby="diag-titulo diag-desc">
-            <title id="diag-titulo">Arquitectura del Consultorio de Informática</title>
-            <desc id="diag-desc">Cuatro actores (Administrador, Consultor, Evaluador y Cliente PYME) usan una SPA en React 18 con TypeScript, que se comunica por HTTPS con JWT con Supabase: GoTrue para autenticación, PostgREST como API REST, Realtime y PostgreSQL 15 con siete tablas, seguridad por filas y una tabla de auditoría inmutable. El código vive en GitHub.</desc>
-            <defs>
-              <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="d-relleno-tinta"/></marker>
-              <pattern id="trama" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" class="d-relleno-trama"/></pattern>
-            </defs>
-            <!-- Actores -->
-            <g class="d-texto">
-              <text x="20" y="34" class="d-rotulo">ACTORES</text>
-              <g transform="translate(20,50)"><rect width="200" height="44" class="d-caja"/><text x="100" y="27" text-anchor="middle">Administrador</text></g>
-              <g transform="translate(20,104)"><rect width="200" height="44" class="d-caja"/><text x="100" y="27" text-anchor="middle">Consultor</text></g>
-              <g transform="translate(20,158)"><rect width="200" height="44" class="d-caja"/><text x="100" y="27" text-anchor="middle">Evaluador</text></g>
-              <g transform="translate(20,212)"><rect width="200" height="44" class="d-caja d-caja--acento"/><text x="100" y="27" text-anchor="middle">Cliente PYME</text></g>
-              <text x="20" y="282" class="d-mini">Catálogo público sin sesión</text>
-            </g>
-            <!-- SPA -->
-            <g class="d-texto">
-              <rect x="270" y="40" width="300" height="300" class="d-caja d-caja--trama"/>
-              <rect x="270" y="40" width="300" height="300" class="d-caja d-caja--hueca"/>
-              <text x="286" y="68" class="d-rotulo">SPA EN EL NAVEGADOR</text>
-              <g transform="translate(290,86)"><rect width="260" height="54" class="d-caja"/><text x="14" y="23" class="d-negrita">Presentación</text><text x="14" y="42" class="d-mini">React 18 · Tailwind · Shadcn UI</text></g>
-              <g transform="translate(290,152)"><rect width="260" height="70" class="d-caja"/><text x="14" y="23" class="d-negrita">Lógica de negocio</text><text x="14" y="42" class="d-mini">TypeScript · motor RCI · wizard SSM</text><text x="14" y="59" class="d-mini">Contextos Auth / Role / Evaluation</text></g>
-              <g transform="translate(290,234)"><rect width="260" height="54" class="d-caja"/><text x="14" y="23" class="d-negrita">Caché y rutas</text><text x="14" y="42" class="d-mini">TanStack Query · rutas por rol</text></g>
-              <text x="290" y="318" class="d-mini">Hosting estático (Vercel / Netlify)</text>
-            </g>
-            <!-- Supabase -->
-            <g class="d-texto">
-              <rect x="640" y="40" width="300" height="420" class="d-caja d-caja--hueca"/>
-              <text x="656" y="68" class="d-rotulo">SUPABASE (BaaS)</text>
-              <g transform="translate(660,86)"><rect width="260" height="48" class="d-caja"/><text x="14" y="21" class="d-negrita">GoTrue</text><text x="14" y="38" class="d-mini">autenticación · emite JWT</text></g>
-              <g transform="translate(660,144)"><rect width="260" height="48" class="d-caja"/><text x="14" y="21" class="d-negrita">PostgREST</text><text x="14" y="38" class="d-mini">API REST parametrizada</text></g>
-              <g transform="translate(660,202)"><rect width="260" height="40" class="d-caja"/><text x="14" y="25" class="d-negrita">Realtime <tspan class="d-mini">· WebSocket</tspan></text></g>
-              <g transform="translate(660,254)"><rect width="260" height="190" class="d-caja d-caja--acento"/>
-                <text x="14" y="24" class="d-negrita">PostgreSQL 15</text>
-                <text x="14" y="46" class="d-mini">7 tablas: profiles, consultas, software,</text>
-                <text x="14" y="62" class="d-mini">evaluacion_detalle, categorias_software,</text>
-                <text x="14" y="78" class="d-mini">tipos_necesidades, logs</text>
-                <text x="14" y="102" class="d-mini">RLS: seguridad por filas</text>
-                <text x="14" y="122" class="d-mini">RPC: create_log · get_my_role</text>
-                <g transform="translate(14,136)"><rect width="232" height="40" class="d-caja d-caja--tinta"/><text x="116" y="25" text-anchor="middle" class="d-invertido">logs: auditoría inmutable</text></g>
-              </g>
-            </g>
-            <!-- Flechas -->
-            <path d="M220 72 H270" class="d-linea" marker-end="url(#flecha)"/>
-            <path d="M220 126 H270" class="d-linea" marker-end="url(#flecha)"/>
-            <path d="M220 180 H270" class="d-linea" marker-end="url(#flecha)"/>
-            <path d="M220 234 H270" class="d-linea" marker-end="url(#flecha)"/>
-            <path d="M570 110 H640" class="d-linea" marker-end="url(#flecha)" marker-start="url(#flecha)"/>
-            <path d="M570 190 H640" class="d-linea" marker-end="url(#flecha)" marker-start="url(#flecha)"/>
-            <g class="d-texto"><rect x="572" y="132" width="66" height="36" class="d-caja"/><text x="605" y="148" text-anchor="middle" class="d-mini">HTTPS</text><text x="605" y="162" text-anchor="middle" class="d-mini">+ JWT</text></g>
-            <!-- GitHub -->
-            <g class="d-texto"><rect x="270" y="400" width="300" height="60" class="d-caja d-caja--hueca"/><text x="420" y="426" text-anchor="middle" class="d-negrita">GitHub</text><text x="420" y="445" text-anchor="middle" class="d-mini">control de versiones</text></g>
-            <path d="M420 400 V340" class="d-linea d-linea--punteada" marker-end="url(#flecha)"/>
-            <text x="20" y="500" class="d-mini d-texto">Basado en los diagramas C4 (niveles 0 y 1) de la investigación. Redibujado para esta versión de muestra.</text>
-          </svg>
-        </figure>
-
-        <div class="rejilla rejilla--3">
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Roles y acceso</h3>
-            <p>Control de acceso basado en roles (RBAC): <strong>administrador</strong>, <strong>consultor</strong> y <strong>evaluador</strong>. Las rutas del panel se protegen por rol y la base de datos aplica políticas RLS (Row Level Security: reglas que deciden qué filas puede ver o cambiar cada usuario).</p>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Auditoría</h3>
-            <p>Cada acción crítica se registra con <code>logAction()</code> mediante la función <code>create_log</code>. La tabla <code>logs</code> prohíbe UPDATE y DELETE para todos los roles, incluido el administrador.</p>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Decisiones (ADR)</h3>
-            <ul class="lista">
-              <li>ADR-01 Supabase como BaaS.</li>
-              <li>ADR-02 Autenticación dual (deuda técnica declarada).</li>
-              <li>ADR-03 Composición de contextos en lugar de Redux.</li>
-              <li>ADR-04 TanStack Query para caché.</li>
-              <li>ADR-05 JSONB para los datos del wizard.</li>
-            </ul>
-          </article>
-        </div>
-
-        <aside class="viñeta aviso">
-          <h3 class="viñeta__titulo">Sobre este sitio</h3>
-          <p>Este sitio <strong>no es el sistema original</strong>. Es una reimplementación demostrativa, estática (HTML, CSS y JavaScript sin backend), que reproduce las fórmulas del motor RCI y una muestra del banco de preguntas para mostrar cómo funcionan. No guarda datos ni tiene usuarios.</p>
-        </aside>
-      </div>
-    </section>
-
-    <!-- 7. CALIDAD Y SEGURIDAD -->
-    <section id="calidad" class="seccion seccion--trama" aria-labelledby="titulo-calidad">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 06</span>
-          <h2 id="titulo-calidad">Calidad y seguridad</h2>
-          <p class="seccion__intro">Pruebas especificadas en Gherkin (Dado / Cuando / Entonces) y aceptación conforme a IEEE 829, revisión frente al OWASP Top 10:2021 y matriz de trazabilidad de requisitos.</p>
-        </header>
-
-        <div class="cifras" role="list">
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">13/13</span><span class="cifra__texto">casos de prueba de sistema aprobados (CP-01 a CP-13)</span></div>
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">8/8</span><span class="cifra__texto">escenarios de aceptación UAT aprobados (IEEE 829)</span></div>
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">Δ = 0,00</span><span class="cifra__texto">error entre cálculo manual y del sistema en los 6 casos del motor</span></div>
-          <div class="viñeta cifra cifra--acento" role="listitem"><span class="cifra__valor">93,8 %</span><span class="cifra__texto">de cobertura funcional sobre 32 requisitos definidos</span></div>
-        </div>
-
-        <div class="rejilla rejilla--2 separado">
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Un caso en Gherkin</h3>
-            <pre class="gherkin"><code><b>Caso</b> CP-03 · Acceso a ruta protegida sin sesión
-  <b>Dado</b> un usuario sin sesión iniciada
-  <b>Cuando</b> intenta acceder a /dashboard
-  <b>Entonces</b> la ruta protegida detecta que no hay sesión
-           y lo redirige a /login</code></pre>
-            <p class="pie">Otro ejemplo: CP-12 intenta modificar un registro de auditoría con privilegios de administrador y la base de datos lo rechaza con «permission denied».</p>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Matriz de trazabilidad (resumen)</h3>
-            <div class="tabla-desplazable" role="region" aria-label="Resumen de la matriz de trazabilidad" tabindex="0">
-              <table class="tabla tabla--compacta">
-                <thead><tr><th scope="col">Módulo</th><th scope="col">Requisitos</th><th scope="col">Implementados</th></tr></thead>
-                <tbody>
-                  <tr><td>AUTH · autenticación y acceso</td><td>RF-01 a RF-06</td><td>6/6</td></tr>
-                  <tr><td>SSM · seguimiento metodológico</td><td>RF-07 a RF-14</td><td>8/8</td></tr>
-                  <tr><td>RCI · rúbrica y motor</td><td>RF-15 a RF-21</td><td>7/7</td></tr>
-                  <tr><td>AUDIT · auditoría y panel</td><td>RF-22 a RF-25</td><td>4/4</td></tr>
-                  <tr class="fila-total"><td>Funcionales</td><td>25</td><td>25/25 (100 %)</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="pie">Cada requisito se enlaza con el componente que lo implementa y el caso de prueba o verificación que lo comprueba.</p>
-          </article>
-        </div>
-
-        <article class="viñeta separado">
-          <h3 class="viñeta__titulo">OWASP Top 10:2021 aplicado</h3>
-          <p>Riesgo por riesgo, con su estado en la versión 1.0 y el plan para la 2.0. La investigación documenta con honestidad lo que quedó pendiente.</p>
-          <ul class="owasp lista-limpia" id="lista-owasp"></ul>
-        </article>
-      </div>
-    </section>
-
-    <!-- 8. RESULTADOS Y CONCLUSIONES -->
-    <section id="resultados" class="seccion" aria-labelledby="titulo-resultados">
-      <div class="contenedor">
-        <header class="seccion__cabecera">
-          <span class="capitulo" aria-hidden="true">Cap. 07</span>
-          <h2 id="titulo-resultados">Resultados y conclusiones</h2>
-        </header>
-
-        <div class="cifras" role="list">
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">275</span><span class="cifra__texto">preguntas diagnósticas en 11 categorías</span></div>
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">12</span><span class="cifra__texto">criterios ponderados con 11 vectores de pesos</span></div>
-          <div class="viñeta cifra" role="listitem"><span class="cifra__valor">7</span><span class="cifra__texto">fases del SSM con auditoría inmutable</span></div>
-          <div class="viñeta cifra cifra--acento" role="listitem"><span class="cifra__valor">0</span><span class="cifra__texto">costo de infraestructura: stack 100 % FOSS</span></div>
-        </div>
-
-        <div class="rejilla rejilla--2 separado">
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Lo que se concluyó</h3>
-            <ul class="lista">
-              <li>Es <strong>técnicamente viable</strong> construir, con costo de infraestructura cero, un sistema que integre el banco de preguntas, la RCI y el SSM.</li>
-              <li>La RCI cubre los 12 criterios, clasifica de forma automática y usa <strong>vectores de pesos por categoría</strong>, algo que ninguno de los marcos comparados implementa.</li>
-              <li>El SSM convierte la asesoría, antes artesanal, en un proceso <strong>documentado, auditable y reutilizable</strong>, y protege el conocimiento frente a la rotación de estudiantes.</li>
-              <li>La autenticación dual es la principal <strong>deuda técnica</strong>; se propone unificarla en la versión 2.0.</li>
-            </ul>
-          </article>
-          <article class="viñeta">
-            <h3 class="viñeta__titulo">Límites declarados</h3>
-            <ul class="lista">
-              <li>Las pruebas las ejecutaron los dos autores con datos simulados: demuestran <strong>correctitud funcional</strong>, no impacto.</li>
-              <li>La hipótesis central queda <strong>parcialmente sustentada</strong>: falta operar con organizaciones reales.</li>
-              <li>La relación beneficio/costo de <strong>21:1</strong> es una proyección pendiente de validación.</li>
-              <li>El MVP es académico, no un sistema listo para producción.</li>
-            </ul>
-          </article>
-        </div>
-
-        <article class="viñeta separado">
-          <h3 class="viñeta__titulo">Sostenibilidad e impacto proyectado</h3>
-          <div class="rejilla rejilla--2 rejilla--sin-margen">
-            <p>El consultorio se proyecta como un espacio de práctica auténtica para estudiantes (aprendizaje situado) y de proyección social de la universidad. Se alinea con cuatro Objetivos de Desarrollo Sostenible: <strong>ODS 8</strong> trabajo decente y crecimiento económico, <strong>ODS 9</strong> industria, innovación e infraestructura, <strong>ODS 10</strong> reducción de las desigualdades y <strong>ODS 17</strong> alianzas.</p>
-            <p>Su continuidad se apoya en protocolos de transferencia y calibración entre cohortes del semillero, en servicios gestionados que no exigen administrar servidores y en una auditoría que deja evidencia de cada decisión. Cada caso documentado puede convertirse en material académico.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- 9. CRÉDITOS -->
-    <section id="creditos" class="seccion seccion--tinta" aria-labelledby="titulo-creditos">
-      <div class="contenedor">
-        <h2 id="titulo-creditos">Créditos y licencia</h2>
-        <p><strong>Investigación original:</strong> trabajo de grado, Universidad ECCI (2026), semillero SigestECCI.</p>
-        <p>Esta es una <strong>versión de muestra</strong>, independiente, creada por Mario Puerta y <a href="https://www.linkedin.com/in/davidalexanderrinconcorredorkuronoma/" rel="noopener">David Rincón «Kuronoma»</a>; no se mantiene activamente.</p>
-        <p>El código de este sitio se publica bajo licencia MIT. Las cifras citadas provienen de la investigación y de las fuentes que ella referencia (DANE, CEPAL).</p>
-        <p class="pie pie--claro">© 2026 Mario Alejandro Puerta Alarcón y David Alexander Rincón Corredor.</p>
-      </div>
-    </section>
+    <!-- Barra fija para pantallas pequeñas: el veredicto siempre a la vista -->
+    <a class="hud-mini" id="hud-mini" href="#hud" aria-label="Ver el veredicto completo">
+      <span class="hud-mini__sello" id="mini-sello" data-clase="APTO">APTO</span>
+      <span class="hud-mini__p"><span class="hud-mini__etq">P</span><span id="mini-p">3,93</span></span>
+      <span class="hud-mini__freno" id="mini-freno"></span>
+    </a>
   </main>
+
+  <footer class="pie-sitio">
+    <div class="contenedor pie-sitio__fila">
+      <p>Hecho por <a href="https://github.com/ale0009" rel="noopener">Mario Puerta</a> (github.com/ale0009) × <a href="https://www.linkedin.com/in/davidalexanderrinconcorredorkuronoma/" rel="noopener">David Rincón «Kuronoma»</a> (LinkedIn) · <a href="#">Portafolio</a></p>
+      <p class="pie-sitio__nota">Rúbrica RCI de la investigación «Consultorio de Informática basado en software libre» (Universidad ECCI, 2026). Versión de muestra; orienta, no reemplaza una evaluación completa. Código MIT.</p>
+    </div>
+  </footer>
 </body>
 </html>

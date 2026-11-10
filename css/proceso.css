@@ -1,0 +1,66 @@
+/* /proceso/: gráficas, muestras de diseño y llamadas a la herramienta */
+.menu ul { gap: .1rem; }
+.menu a { font-size: .9rem; padding: .45rem .5rem; }
+.menu__herramienta { background: var(--rojo); color: var(--sobre-rojo); border-color: var(--tinta) !important; }
+.boton--grande { font-size: 1.1rem; padding: .8rem 1.4rem; }
+
+.grafica { margin: 0; }
+.grafica figcaption p { margin-bottom: .6rem; }
+.grafica--interna { margin-top: 1rem; }
+.grafica__lienzo { overflow-x: auto; }
+.grafica__lienzo svg { display: block; width: 100%; height: auto; }
+.barras { max-width: 760px; }
+.mapa { min-width: 640px; max-width: 900px; }
+.g-rejilla { stroke: var(--trama); stroke-width: 1.5; }
+.g-eje { font-family: var(--fuente-mono); font-size: 12px; fill: var(--tinta-suave); }
+.g-etiqueta { font-family: var(--fuente); font-size: 15px; font-weight: 600; fill: var(--tinta); }
+.g-etiqueta--chica { font-size: 13.5px; font-weight: 400; }
+.g-fuente { font-family: var(--fuente-mono); font-size: 11px; fill: var(--tinta-suave); }
+.g-valor { font-family: var(--fuente-mono); font-size: 14px; font-weight: 600; fill: var(--tinta); }
+.g-barra { fill: var(--tinta); }
+.g-barra--acento { fill: var(--rojo); }
+.g-blanco { fill: transparent; }
+.g-fila:hover .g-barra { fill: var(--cian); }
+.g-calor { fill: var(--cian); stroke: none; }
+.g-celda:hover .g-calor { stroke: var(--tinta); stroke-width: 2.5; }
+.g-celda-valor { font-family: var(--fuente-mono); font-size: 12px; font-weight: 600; fill: var(--sobre-cian); pointer-events: none; }
+
+.cta-herramienta {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .2rem 1rem; margin-top: 2rem;
+  background: var(--rojo); color: var(--sobre-rojo); text-decoration: none;
+  border: var(--borde) solid var(--tinta); box-shadow: 8px 8px 0 var(--tinta); padding: 1.3rem 1.6rem;
+  transition: transform .12s, box-shadow .12s;
+}
+.cta-herramienta:hover { transform: translate(-3px, -3px); box-shadow: 11px 11px 0 var(--tinta); }
+.cta-herramienta__texto { font-family: var(--fuente-titulo); font-size: clamp(1.5rem, 4vw, 2.3rem); line-height: 1.1; }
+.cta-herramienta__sub { grid-column: 1; font-weight: 600; }
+.cta-herramienta__flecha { grid-column: 2; grid-row: 1 / span 2; font-family: var(--fuente-titulo); font-size: clamp(2rem, 6vw, 3.4rem); }
+
+.muestra { margin: 0; }
+.boceto { display: block; width: 100%; height: auto; margin: .6rem 0; }
+.b-trazo rect, .b-trazo line { fill: none; stroke: var(--tinta); stroke-width: 2.5; }
+.b-trazo .b-fino line, .b-trazo line.b-fino { stroke-width: 1.5; stroke-dasharray: 4 4; }
+.b-trazo .b-relleno circle { fill: var(--rojo); stroke: var(--tinta); stroke-width: 2; }
+.b-trazo .b-pips rect { fill: var(--cian); stroke-width: 2; }
+.b-trazo .b-sello { stroke: var(--rojo); stroke-width: 3; }
+.b-rotulo { font-family: var(--fuente-mono); font-size: 12px; font-weight: 600; fill: var(--tinta-suave); letter-spacing: .08em; }
+.b-rotulo--rojo { fill: var(--rojo-texto); }
+.b-mini { font-family: var(--fuente); font-size: 12px; fill: var(--tinta-suave); }
+.b-mini--rojo { fill: var(--rojo-texto); font-weight: 700; font-family: var(--fuente-mono); }
+.paleta { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: .4rem .8rem; margin: .6rem 0; font-size: .92rem; }
+.paleta li { display: flex; align-items: center; gap: .5rem; }
+.paleta__chip { width: 28px; height: 28px; border: 2px solid var(--tinta); flex: none; }
+.paleta code { font-size: .82rem; color: var(--tinta-suave); }
+.paleta__sub { font-family: var(--fuente-mono); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .8rem 0 0; color: var(--tinta-suave); }
+.sellos { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; margin: 1rem 0 .4rem; }
+.sellos .sello { margin: 0; font-size: 1.15rem; }
+.erratas { padding-left: 1.3rem; margin: 0; }
+.erratas li { margin-bottom: .7rem; }
+.erratas b { display: block; }
+
+@media (max-width: 560px) {
+  .cta-herramienta { padding: 1rem 1.1rem; box-shadow: 5px 5px 0 var(--tinta); }
+}
+@media (max-width: 1020px) {
+  .menu a { font-size: 1rem; }
+}

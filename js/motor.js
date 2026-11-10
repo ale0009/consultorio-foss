@@ -113,3 +113,23 @@ export function recomendarCategoria(respuestas, preguntas) {
   const recomendadas = maximo > 0 ? ranking.filter((r) => r.puntaje === maximo).map((r) => r.categoria) : [];
   return { ranking, recomendadas };
 }
+
+/**
+ * «El criterio que más te frena»: el que más puntos de P_total deja sobre la mesa,
+ * es decir, el de mayor pérdida (5 − C_i) × w_i. Empates: mayor peso y luego el orden C1…C12.
+ * Devuelve null si los 12 criterios ya están en 5.
+ */
+export function criterioQueMasFrena(puntajes, pesos) {
+  const ptotal = calcularPtotal(puntajes, pesos);
+  let mejor = null;
+  puntajes.forEach((c, i) => {
+    const perdida = redondear((5 - c) * pesos[i]);
+    if (perdida <= 0) return;
+    if (!mejor || perdida > mejor.perdida || (perdida === mejor.perdida && pesos[i] > pesos[mejor.indice])) {
+      mejor = { indice: i, perdida };
+    }
+  });
+  if (!mejor) return null;
+  const ptotalSiSube = redondear(ptotal + mejor.perdida);
+  return { ...mejor, puntaje: puntajes[mejor.indice], peso: pesos[mejor.indice], ptotalSiSube, clasificacionSiSube: clasificar(ptotalSiSube) };
+}

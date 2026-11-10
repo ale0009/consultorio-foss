@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   puntajeDesdePorcentaje, clasificar, validarPesos, calcularPtotal,
-  desviacionEstandar, indiceCumplimiento, evaluar, recomendarCategoria, UMBRALES,
+  desviacionEstandar, indiceCumplimiento, evaluar, recomendarCategoria, UMBRALES, criterioQueMasFrena,
 } from '../js/motor.js';
-import { CATEGORIAS, CRITERIOS, EJEMPLO_LIBREOFFICE, PREGUNTAS_DIAGNOSTICO } from '../js/datos.js';
+import { CATEGORIAS, CRITERIOS, EJEMPLO_LIBREOFFICE, PREGUNTAS_DIAGNOSTICO, NIVELES, descriptorNivel } from '../js/datos.js';
 
 const pesosCat = (id) => CATEGORIAS.find((c) => c.id === id).pesos;
 
@@ -106,4 +106,45 @@ test('diagnóstico: recomienda la categoría con más puntos y reporta empates',
   r = recomendarCategoria({ P108: 1, P1007: 1 }, PREGUNTAS_DIAGNOSTICO);
   assert.deepEqual(r.recomendadas, ['CAT1', 'CAT10']);
   assert.throws(() => recomendarCategoria({ P108: 3 }, PREGUNTAS_DIAGNOSTICO), RangeError);
+});
+
+test('el criterio que más frena es el de mayor pérdida (5 − C_i) × w_i', () => {
+  const w = pesosCat('CAT3'); // C9 pesa 0,15
+  const puntajes = Array(12).fill(4);
+  puntajes[8] = 2; // C9 Seguridad
+  puntajes[0] = 1; // C1 Licencia, w = 0,09
+  const f = criterioQueMasFrena(puntajes, w);
+  assert.equal(CRITERIOS[f.indice].id, 'C9'); // 3 × 0,15 = 0,45 > 4 × 0,09 = 0,36
+  assert.equal(f.perdida, 0.45);
+  assert.equal(f.puntaje, 2);
+  assert.equal(f.ptotalSiSube, calcularPtotal(puntajes.map((c, i) => (i === 8 ? 5 : c)), w));
+});
+
+test('el criterio que más frena: empate por peso, y null si todo está en 5', () => {
+  const w = pesosCat('CAT1'); // C4, C5, C6 y C9 pesan 0,09; el resto 0,08
+  const f = criterioQueMasFrena(Array(12).fill(4), w);
+  assert.equal(CRITERIOS[f.indice].id, 'C4'); // mayor peso y primero en el orden
+  assert.equal(criterioQueMasFrena(Array(12).fill(5), w), null);
+});
+
+test('el ejemplo LibreOffice: lo que más frena y su efecto', () => {
+  const puntajes = EJEMPLO_LIBREOFFICE.porcentajes.map(puntajeDesdePorcentaje);
+  const f = criterioQueMasFrena(puntajes, pesosCat('CAT1'));
+  assert.equal(CRITERIOS[f.indice].id, 'C7'); // C7, C10 y C12 en 3 con w 0,08: gana el primero
+  assert.equal(f.ptotalSiSube, 4.09);
+  assert.equal(f.clasificacionSiSube, 'APTO');
+});
+
+test('descriptores ancla por nivel: extremos de la tesis e interpolación', () => {
+  const c9 = CRITERIOS.find((c) => c.id === 'C9');
+  assert.match(descriptorNivel(c9, 1), /CVE/);
+  assert.match(descriptorNivel(c9, 5), /30 días/);
+  assert.match(descriptorNivel(c9, 3), /50 %/);
+  assert.equal(NIVELES[4], 'Bueno');
+  assert.throws(() => descriptorNivel(c9, 0), RangeError);
+  for (const c of CRITERIOS) for (const n of [1, 2, 3, 4, 5]) assert.ok(descriptorNivel(c, n).length > 10);
+});
+
+test('criterios automatizables según la Tabla 5.6.2', () => {
+  assert.deepEqual(CRITERIOS.filter((c) => c.auto).map((c) => c.id), ['C1', 'C2', 'C3', 'C6', 'C9', 'C11']);
 });

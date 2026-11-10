@@ -1,28 +1,11 @@
-// Interfaz del sitio: conecta el DOM con las funciones puras de motor.js.
-import { CRITERIOS, CATEGORIAS, EJEMPLO_LIBREOFFICE, PREGUNTAS_DIAGNOSTICO } from './datos.js';
-import { evaluar, puntajeDesdePorcentaje, recomendarCategoria } from './motor.js';
+// Página /proceso/: tablas, diagnóstico rápido y gráficas SVG propias.
+import { CRITERIOS, CATEGORIAS, PREGUNTAS_DIAGNOSTICO } from './datos.js';
+import { recomendarCategoria } from './motor.js';
+import { iniciarTema } from './tema.js';
 
 const $ = (sel) => document.querySelector(sel);
 const num = (x, d = 2) => x.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
 const categoria = (id) => CATEGORIAS.find((c) => c.id === id);
-
-/* ---------- Tema claro / oscuro ---------- */
-function iniciarTema() {
-  const boton = $('.boton-tema');
-  const raiz = document.documentElement;
-  const oscuroSistema = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const esOscuro = () => (raiz.dataset.theme ? raiz.dataset.theme === 'dark' : oscuroSistema());
-  const pintar = () => {
-    boton.setAttribute('aria-label', esOscuro() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-    boton.setAttribute('aria-pressed', String(esOscuro()));
-  };
-  boton.addEventListener('click', () => {
-    raiz.dataset.theme = esOscuro() ? 'light' : 'dark';
-    try { localStorage.setItem('tema', raiz.dataset.theme); } catch (e) { /* sin almacenamiento */ }
-    pintar();
-  });
-  pintar();
-}
 
 /* ---------- Menú móvil ---------- */
 function iniciarMenu() {
@@ -90,110 +73,6 @@ function pintarOwasp() {
     </li>`).join('');
 }
 
-/* ---------- Motor RCI ---------- */
-const estado = { puntajes: Array(12).fill(3), categoria: 'CAT1' };
-const NIVELES = { 1: 'Crítico', 2: 'Deficiente', 3: 'Aceptable', 4: 'Bueno', 5: 'Excelente' };
-
-function pintarCriterios() {
-  const pesos = categoria(estado.categoria).pesos;
-  $('#lista-criterios').innerHTML = CRITERIOS.map((c, i) => `
-    <div class="criterio">
-      <div class="criterio__cabecera">
-        <label for="c-${i}" class="criterio__nombre"><span class="criterio__id">${c.id}</span> ${c.nombre}</label>
-        <span class="criterio__peso" id="w-${i}" title="Peso del criterio en la categoría">w = ${num(pesos[i])}</span>
-      </div>
-      <div class="criterio__control">
-        <input type="range" id="c-${i}" min="1" max="5" step="1" value="${estado.puntajes[i]}"
-          aria-describedby="d-${i}" aria-valuetext="${estado.puntajes[i]}, ${NIVELES[estado.puntajes[i]]}">
-        <output for="c-${i}" class="criterio__valor" id="v-${i}">${estado.puntajes[i]}</output>
-      </div>
-      <p class="criterio__desc" id="d-${i}">${c.descripcion} <span class="criterio__anclas">1: ${c.critico} · 5: ${c.excelente}</span></p>
-    </div>`).join('');
-  CRITERIOS.forEach((_, i) => {
-    $(`#c-${i}`).addEventListener('input', (e) => {
-      const v = Number(e.target.value);
-      estado.puntajes[i] = v;
-      e.target.setAttribute('aria-valuetext', `${v}, ${NIVELES[v]}`);
-      $(`#v-${i}`).textContent = v;
-      recalcular();
-    });
-  });
-}
-
-function actualizarPesos() {
-  const pesos = categoria(estado.categoria).pesos;
-  pesos.forEach((w, i) => { $(`#w-${i}`).textContent = `w = ${num(w)}`; });
-}
-
-function ponerPuntajes(puntajes) {
-  estado.puntajes = [...puntajes];
-  puntajes.forEach((v, i) => {
-    const r = $(`#c-${i}`);
-    r.value = v;
-    r.setAttribute('aria-valuetext', `${v}, ${NIVELES[v]}`);
-    $(`#v-${i}`).textContent = v;
-  });
-}
-
-let temporizadorAnuncio;
-function recalcular() {
-  const cat = categoria(estado.categoria);
-  const r = evaluar(estado.puntajes, cat.pesos);
-  const nombre = $('#nombre-software').value.trim() || 'Software sin nombre';
-  $('#resultado-nombre').textContent = `${nombre} · ${cat.id} ${cat.nombre}`;
-  $('#ptotal').textContent = num(r.ptotal);
-  $('#sigma').textContent = num(r.sigma);
-  $('#imin').textContent = `${Math.round(r.imin * 100)} %`;
-  const sello = $('#sello');
-  sello.textContent = r.clasificacion;
-  sello.dataset.clase = r.clasificacion;
-  $('#medidor-relleno').style.width = `${((r.ptotal - 1) / 4) * 100}%`;
-  $('#medidor-relleno').dataset.clase = r.clasificacion;
-
-  const textos = {
-    APTO: 'Recomendable sin restricciones para el contexto evaluado.',
-    CONDICIONAL: 'Adoptable bajo condiciones: capacitación, adaptación o soporte adicional.',
-    'NO APTO': 'No recomendable para el contexto evaluado.',
-  };
-  const bajos = CRITERIOS.filter((_, i) => estado.puntajes[i] < 3).map((c) => c.id);
-  $('#explicacion').textContent = textos[r.clasificacion] +
-    (bajos.length ? ` Criterios por debajo de 3: ${bajos.join(', ')}.` : ' Ningún criterio por debajo de 3.');
-
-  $('#tabla-aportes').innerHTML = CRITERIOS.map((c, i) =>
-    `<tr><th scope="row">${c.id} ${c.nombre}</th><td>${estado.puntajes[i]}</td><td>${num(cat.pesos[i])}</td><td>${num(r.aportes[i], 2)}</td></tr>`
-  ).join('') + `<tr class="fila-total"><th scope="row">P<sub>total</sub></th><td></td><td>1,00</td><td>${num(r.ptotal)}</td></tr>`;
-
-  clearTimeout(temporizadorAnuncio);
-  temporizadorAnuncio = setTimeout(() => {
-    $('#anuncio').textContent = `Puntaje total ${num(r.ptotal)} de 5: ${r.clasificacion}.`;
-  }, 600);
-}
-
-function iniciarMotor() {
-  const sel = $('#categoria');
-  sel.innerHTML = CATEGORIAS.map((c) => `<option value="${c.id}">${c.id} · ${c.nombre}</option>`).join('');
-  sel.value = estado.categoria;
-  pintarCriterios();
-  sel.addEventListener('change', () => { estado.categoria = sel.value; actualizarPesos(); recalcular(); });
-  $('#nombre-software').addEventListener('input', recalcular);
-  $('#cargar-ejemplo').addEventListener('click', cargarEjemplo);
-  $('#reiniciar').addEventListener('click', () => {
-    ponerPuntajes(Array(12).fill(3));
-    $('#nombre-software').value = '';
-    recalcular();
-  });
-  cargarEjemplo();
-}
-
-function cargarEjemplo() {
-  estado.categoria = EJEMPLO_LIBREOFFICE.categoria;
-  $('#categoria').value = estado.categoria;
-  $('#nombre-software').value = `${EJEMPLO_LIBREOFFICE.nombre} (ejemplo)`;
-  actualizarPesos();
-  ponerPuntajes(EJEMPLO_LIBREOFFICE.porcentajes.map(puntajeDesdePorcentaje));
-  recalcular();
-}
-
 /* ---------- Diagnóstico ---------- */
 const respuestas = {};
 function iniciarDiagnostico() {
@@ -233,20 +112,92 @@ function pintarDiagnostico() {
     ${recomendadas.length > 1 ? `<p>Empate con: ${recomendadas.slice(1).map((id) => `${id} ${categoria(id).nombre}`).join(', ')}.</p>` : ''}
     <p>En esta categoría ${top.length > 1 ? 'los criterios con más peso son' : 'el criterio con más peso es'} <strong>${topTexto}</strong> (w = ${num(wMax)}). El banco completo tiene ${principal.preguntas} preguntas para ella.</p>
     ${otras.length && recomendadas.length === 1 ? `<p class="pie">También marcó: ${otras.map((r) => r.categoria).join(', ')}.</p>` : ''}
-    <button type="button" class="boton boton--primario boton--chico" id="ir-motor">Evaluar con el vector de ${principal.id}</button>`;
-  $('#ir-motor').addEventListener('click', () => {
-    estado.categoria = principal.id;
-    $('#categoria').value = principal.id;
-    actualizarPesos();
-    recalcular();
-    $('#motor').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    $('#categoria').focus({ preventScroll: true });
+    <a class="boton boton--primario boton--chico" href="../?categoria=${principal.id}">Evaluar con los pesos de ${principal.id}</a>`;
+}
+
+/* ---------- Gráficas (SVG propio, sin bibliotecas) ---------- */
+const SVG = 'http://www.w3.org/2000/svg';
+
+/**
+ * Barras horizontales sobre una escala fija. filas: [{ etiqueta, valor, texto, fuente?, acento? }].
+ * En contenedores estrechos la etiqueta va encima de la barra para no encoger el texto.
+ */
+function barras(destino, filas, { maximo, titulo, formato }) {
+  const estrecho = destino.clientWidth < 520;
+  const ancho = estrecho ? 360 : 640;
+  const etq = estrecho ? 0 : 210;
+  const paso = estrecho ? 62 : 46;
+  const desp = estrecho ? 26 : 0; // desplazamiento vertical de la barra bajo la etiqueta
+  const alto = filas.length * paso + 28;
+  const util = ancho - etq - 64;
+  const x = (v) => (v / maximo) * util;
+  const marcas = [0, maximo / 2, maximo];
+  destino.innerHTML = `
+    <svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="${titulo}" class="barras">
+      ${marcas.map((m) => `<line x1="${etq + x(m)}" y1="4" x2="${etq + x(m)}" y2="${alto - 22}" class="g-rejilla"/><text x="${etq + x(m)}" y="${alto - 6}" text-anchor="${m === 0 && estrecho ? 'start' : 'middle'}" class="g-eje">${formato(m)}</text>`).join('')}
+      ${filas.map((f, i) => {
+        const y = 10 + i * paso;
+        const yb = y + desp;
+        return `<g class="g-fila"><title>${f.texto}</title>
+          <rect x="0" y="${y - 6}" width="${ancho}" height="${paso - 6}" class="g-blanco"/>
+          <text x="0" y="${y + 15}" class="g-etiqueta">${f.etiqueta}${estrecho && f.fuente ? ` <tspan class="g-fuente">· ${f.fuente}</tspan>` : ''}</text>
+          ${!estrecho && f.fuente ? `<text x="0" y="${y + 31}" class="g-fuente">${f.fuente}</text>` : ''}
+          <rect x="${etq}" y="${yb}" width="${Math.max(x(f.valor), 4)}" height="24" class="g-barra${f.acento ? ' g-barra--acento' : ''}"/>
+          <text x="${etq + x(f.valor) + 8}" y="${yb + 17}" class="g-valor">${formato(f.valor)}</text></g>`;
+      }).join('')}
+    </svg>`;
+}
+
+function pintarGraficaProblema() {
+  barras(document.querySelector('#grafica-problema'), [
+    { etiqueta: 'Usa software sin licencia', valor: 68, fuente: 'DANE, 2022', texto: '68 % de las micro y pequeñas empresas usa software propietario sin licencia válida (DANE, 2022)' },
+    { etiqueta: 'El costo frena lo digital', valor: 71, fuente: 'DANE, 2022', texto: '71 % señala el costo de licencias como barrera principal (DANE, 2022)' },
+    { etiqueta: 'Desconoce alternativas libres', valor: 73, fuente: 'CEPAL, 2022', texto: '73 % de los tomadores de decisiones desconoce alternativas de código abierto (CEPAL, 2022)' },
+    { etiqueta: 'Ya adoptó algo FOSS', valor: 12, fuente: 'DANE, 2022', acento: true, texto: '12 % ha adoptado alguna herramienta FOSS (DANE, 2022)' },
+  ], { maximo: 100, titulo: 'El problema en cifras: 68 % sin licencia, 71 % frenado por el costo, 73 % desconoce alternativas, 12 % adoptó FOSS', formato: (v) => `${v} %` });
+}
+
+function pintarGraficaMarcos() {
+  const nombres = ['OpenBRR', 'QSOS', 'EvdEN', 'BasicMet'];
+  const filas = nombres.map((n, k) => {
+    const total = MARCOS.reduce((a, fila) => a + fila[k + 1], 0);
+    return { etiqueta: n, valor: total, texto: `${n}: ${total} de 12 criterios` };
   });
+  filas.push({ etiqueta: 'RCI', valor: 12, acento: true, texto: 'RCI: 12 de 12 criterios' });
+  barras(document.querySelector('#grafica-marcos'), filas, { maximo: 12, titulo: 'Criterios cubiertos de 12: OpenBRR 9, QSOS 9, EvdEN 9, BasicMet 6, RCI 12', formato: (v) => `${v}` });
+}
+
+function pintarMapaPesos() {
+  const celda = 44, izq = 250, arriba = 34;
+  const todos = CATEGORIAS.flatMap((c) => c.pesos);
+  const min = Math.min(...todos), max = Math.max(...todos);
+  const ancho = izq + 12 * celda + 4, alto = arriba + CATEGORIAS.length * celda + 4;
+  // Una sola tinta (cian), de clara a oscura: magnitud secuencial.
+  const opacidad = (w) => 0.12 + 0.88 * ((w - min) / (max - min));
+  document.querySelector('#mapa-pesos').innerHTML = `
+    <svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Mapa de calor de los pesos de los 12 criterios en las 11 categorías; mínimo ${min.toFixed(2)}, máximo ${max.toFixed(2)}" class="mapa">
+      ${CRITERIOS.map((c, j) => `<text x="${izq + j * celda + celda / 2}" y="${arriba - 12}" text-anchor="middle" class="g-eje">${c.id}</text>`).join('')}
+      ${CATEGORIAS.map((cat, i) => `
+        <text x="${izq - 10}" y="${arriba + i * celda + celda / 2 + 5}" text-anchor="end" class="g-etiqueta g-etiqueta--chica">${cat.nombre}</text>
+        ${cat.pesos.map((w, j) => `<g class="g-celda"><title>${cat.nombre} · ${CRITERIOS[j].id} ${CRITERIOS[j].nombre}: w = ${w.toFixed(2).replace('.', ',')}</title>
+          <rect x="${izq + j * celda + 1}" y="${arriba + i * celda + 1}" width="${celda - 2}" height="${celda - 2}" class="g-calor" style="fill-opacity:${opacidad(w).toFixed(2)}"/>
+          ${w === Math.max(...cat.pesos) ? `<text x="${izq + j * celda + celda / 2}" y="${arriba + i * celda + celda / 2 + 5}" text-anchor="middle" class="g-celda-valor">${w.toFixed(2).slice(1).replace('.', ',')}</text>` : ''}</g>`).join('')}`).join('')}
+    </svg>`;
 }
 
 iniciarTema();
 iniciarMenu();
 pintarMarcos();
 pintarOwasp();
-iniciarMotor();
 iniciarDiagnostico();
+pintarGraficaProblema();
+pintarGraficaMarcos();
+pintarMapaPesos();
+let temporizadorGraficas;
+let anchoPrevio = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === anchoPrevio) return;
+  anchoPrevio = window.innerWidth;
+  clearTimeout(temporizadorGraficas);
+  temporizadorGraficas = setTimeout(() => { pintarGraficaProblema(); pintarGraficaMarcos(); }, 150);
+});

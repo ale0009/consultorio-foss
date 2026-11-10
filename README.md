@@ -1,61 +1,59 @@
-# Consultorio FOSS · versión de muestra
+# ¿Es APTO? · Evaluador de software libre
 
-> **Proyecto de muestra sin mantenimiento.** Es una versión nueva, independiente y reimplementada desde cero de nuestra investigación de grado. El sistema original pertenece a la Universidad ECCI; este repositorio no contiene su código.
+> **Proyecto de muestra sin mantenimiento.** Versión nueva, independiente y reimplementada desde cero de nuestra investigación de grado. El sistema original pertenece a la Universidad ECCI; este repositorio no contiene su código.
 
 [English version](README.en.md)
 
-Sitio estático de una sola página que presenta la investigación **«Propuesta de implementación de un Consultorio de Informática en la Universidad ECCI, basado en software libre»** (Ingeniería de Sistemas, 2026, semillero SigestECCI) y una **demo funcional** de sus dos instrumentos centrales:
+## Qué hace
 
-- **Motor RCI (Rúbrica Científica Integral):** el visitante puntúa un software en 12 criterios (C1–C12) y ve en vivo el puntaje ponderado `P_total = Σ(C_i × w_i)`, la desviación estándar σ, el índice de cumplimiento I_min y la clasificación **APTO** (≥ 3,75), **CONDICIONAL** (2,50–3,75) o **NO APTO** (< 2,50). Incluye los 11 vectores de pesos por categoría y un ejemplo precargado (LibreOffice, valores ilustrativos).
-- **Diagnóstico rápido:** 10 preguntas reales del Banco de Preguntas Diagnósticas (275 preguntas, 11 categorías) que sugieren la categoría tecnológica por la que empezar y conectan con el motor.
+Una sola cosa: responde **«¿este software libre es APTO para tu organización?»**.
 
-Además resume el problema, los objetivos, la metodología, el estado del arte, la arquitectura (React + Supabase/PostgreSQL con RLS y auditoría inmutable), las pruebas (Gherkin, IEEE 829), el OWASP Top 10, la matriz de trazabilidad, los resultados y las conclusiones.
+- **`/` — la herramienta.** Escribes el nombre del software, eliges una de las 11 categorías (cada una cambia los pesos) y puntúas 12 criterios con niveles de 1 a 5. Al pasar el cursor (o tocar) un nivel ves su descriptor ancla. En vivo aparecen el veredicto **APTO / CONDICIONAL / NO APTO** como un sello, `P_total = Σ(C_i × w_i)`, la desviación σ, el índice I_min y **el criterio que más te frena** (el que más subiría P_total si llegara a 5). Abre con un ejemplo marcado (LibreOffice).
+- **Opcional: datos de GitHub.** Pegas `dueño/repo` o la URL y la API pública de GitHub (sin clave, 60 consultas por hora) trae licencia, fechas y contribuidores; con eso se **sugieren** C1 Licencia, C2 Madurez y C3 Comunidad. Las sugerencias son editables y nunca se aplican solas. Si no hay red o se agota el límite, se explica el error y se ofrecen datos de ejemplo marcados «sin conexión: datos de ejemplo del 10 de noviembre de 2026».
+- **`/proceso/` — cómo se llegó ahí.** La investigación completa: el problema con cifras del DANE y la CEPAL, el Sistema de Seguimiento Metodológico, la comparación con OpenBRR, QSOS, EvdEN y BasicMet, el banco de preguntas (con un diagnóstico rápido que abre la herramienta con la categoría sugerida), la arquitectura, la calidad y el OWASP Top 10, los resultados, gráficas SVG propias (problema, cobertura de marcos, mapa de los 11 vectores de pesos), las decisiones de diseño y una **fe de erratas** con las cifras de la fuente que no cuadran.
 
-## Capturas
-
-| Vista | Descripción |
-|---|---|
-| Portada (1440 px) | Título «Elegir software libre con método, no a ciegas», tres viñetas con las cifras del DANE (68 %, 71 %, 12 %) y un globo de diálogo con la idea central. |
-| Motor RCI | Formulario con 12 deslizadores 1–5 y, al lado, el resultado: medidor con umbrales, puntaje grande, sello APTO/CONDICIONAL/NO APTO, σ e I_min. |
-| Diagnóstico (390 px) | Preguntas con opciones No / Sí / Sí, es prioritario; la categoría sugerida aparece con un botón para evaluar con su vector de pesos. |
-| Arquitectura | Diagrama SVG propio: actores → SPA React → Supabase (GoTrue, PostgREST, Realtime, PostgreSQL 15 con RLS y tabla de logs inmutable). |
-
-Estilo «Tinta y trama»: viñetas con borde de tinta, trama de puntos y acento rojo, inspirado en el manga. Modo claro y oscuro, accesible con teclado y respetuoso de `prefers-reduced-motion`.
-
-## Cómo correrlo
+## Cómo usarlo
 
 No requiere instalación ni compilación.
 
 ```bash
 python3 -m http.server 8000   # o: npm start
-# abrir http://localhost:8000
+# abrir http://localhost:8000  (herramienta) y http://localhost:8000/proceso/
 ```
 
-Pruebas del motor (Node 20 o superior):
+Pruebas (Node 20 o superior):
 
 ```bash
 node --test   # o: npm test
 ```
 
-Se puede publicar tal cual en GitHub Pages (rama `main`, carpeta raíz).
+Se publica tal cual en GitHub Pages (rama `main`, carpeta raíz).
 
 ## Estructura
 
 ```
-index.html          página única
-css/styles.css      estilos y temas
-js/datos.js         criterios, pesos por categoría y preguntas (datos de la investigación)
-js/motor.js         funciones puras del motor RCI y del diagnóstico
-js/app.js           interfaz
-test/motor.test.js  pruebas con node:test
+index.html            la herramienta
+proceso/index.html    la investigación y el proceso
+css/styles.css        paleta «Tinta y trama» (oscuro: línea Jisseki) y componentes comunes
+css/herramienta.css   estilos de la herramienta
+css/proceso.css       gráficas y muestras de diseño
+js/datos.js           criterios, descriptores, pesos por categoría, preguntas y respaldo sin conexión
+js/motor.js           funciones puras del motor RCI (P_total, σ, I_min, criterio que más frena, diagnóstico)
+js/github.js          lectura de repositorios y sugerencias C1–C3 (puras; fetch inyectable)
+js/herramienta.js     interfaz de la herramienta
+js/proceso.js         interfaz de /proceso/ y gráficas
+js/tema.js            tema claro / oscuro
+test/                 pruebas con node:test
 ```
+
+## De qué trabajo sale
+
+Trabajo de grado **«Propuesta de implementación de un Consultorio de Informática en la Universidad ECCI, basado en software libre»** (Ingeniería de Sistemas, Universidad ECCI, 2026, semillero SigestECCI). Las fórmulas (3.1, 3.2 y 3.3), los 12 criterios con sus descriptores ancla (Tabla 5.6.2) y los 11 vectores de pesos (Tabla 5.6.1 y Anexo H.1) vienen de ahí. Lo calculado en esta versión (el criterio que más frena, los cortes intermedios de las sugerencias de GitHub y los conteos de la fe de erratas) está marcado como tal en `/proceso/`.
 
 ## Créditos
 
-- **Mario Puerta** (Mario Alejandro Puerta Alarcón): coautor de la investigación y el desarrollo.
+- **Mario Puerta** (Mario Alejandro Puerta Alarcón): coautor de la investigación y el desarrollo. [GitHub](https://github.com/ale0009)
 - **David Rincón «Kuronoma»** (David Alexander Rincón Corredor): coautor de la investigación y el desarrollo. [LinkedIn](https://www.linkedin.com/in/davidalexanderrinconcorredorkuronoma/)
-
-Investigación original: trabajo de grado, Universidad ECCI (2026), semillero SigestECCI. Esta es una versión de muestra, independiente, creada por Mario Puerta y David Rincón «Kuronoma»; no se mantiene activamente.
 
 ## Licencia
 

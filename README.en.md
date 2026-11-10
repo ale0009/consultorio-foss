@@ -1,51 +1,43 @@
-# Consultorio FOSS · showcase version
+# ¿Es APTO? · Free software suitability checker
 
 > **Showcase project, not maintained.** A new, independent version rebuilt from scratch from our undergraduate research. The original system belongs to Universidad ECCI; this repository does not contain its code.
 
 [Versión en español](README.md)
 
-A static single-page site presenting the research **"Proposal for a university IT consulting office at Universidad ECCI based on free software"** (Systems Engineering, 2026, SigestECCI research group) plus a **working demo** of its two core instruments:
+## What it does
 
-- **RCI engine (Integral Scientific Rubric):** visitors score a piece of software on 12 criteria (C1–C12) and see, live, the weighted score `P_total = Σ(C_i × w_i)`, standard deviation σ, compliance index I_min and the classification **APTO** / suitable (≥ 3.75), **CONDICIONAL** / conditional (2.50–3.75) or **NO APTO** / not suitable (< 2.50). Includes the 11 per-category weight vectors and a preloaded example (LibreOffice, illustrative values).
-- **Quick diagnosis:** 10 real questions from the Diagnostic Question Bank (275 questions, 11 categories) that suggest a technology category and hand it over to the engine.
+One thing: it answers **"is this free software suitable (APTO) for your organisation?"**. The site is in Spanish.
 
-It also summarises the problem, objectives, methodology, state of the art, architecture (React + Supabase/PostgreSQL with RLS and immutable audit log), testing (Gherkin, IEEE 829), OWASP Top 10, traceability matrix, results and conclusions. The site content is in Spanish.
+- **`/` — the tool.** Type the software name, pick one of 11 categories (each one changes the weights) and rate 12 criteria on 1–5 levels. Hovering (or tapping) a level shows its anchor descriptor. You get, live, the **APTO / CONDICIONAL / NO APTO** verdict as a stamp, `P_total = Σ(C_i × w_i)`, standard deviation σ, compliance index I_min and **the criterion holding you back most** (the one that would raise P_total the most if it reached 5). It opens with a clearly labelled example (LibreOffice).
+- **Optional GitHub data.** Paste `owner/repo` or the URL and GitHub's public API (no key, 60 requests per hour) returns licence, dates and contributors, used to **suggest** C1 Licence, C2 Maturity and C3 Community. Suggestions are editable and never applied automatically. Offline or rate-limited, the error is explained and sample data labelled "offline: sample data from 10 November 2026" is offered.
+- **`/proceso/` — how we got there.** The full research: the problem with DANE and CEPAL figures, the methodological tracking system, the comparison with OpenBRR, QSOS, EvdEN and BasicMet, the question bank (with a quick diagnosis that opens the tool with the suggested category), architecture, quality and OWASP Top 10, results, hand-made SVG charts (problem, framework coverage, heat map of the 11 weight vectors), design decisions and an **errata** listing source figures that do not add up.
 
-## Screenshots
-
-| View | Description |
-|---|---|
-| Hero (1440 px) | Headline, three comic-style panels with the DANE figures (68 %, 71 %, 12 %) and a speech bubble with the core insight. |
-| RCI engine | 12 sliders (1–5) next to a result panel: threshold gauge, large score, APTO/CONDICIONAL/NO APTO stamp, σ and I_min. |
-| Diagnosis (390 px) | Questions with No / Yes / Yes, priority; the suggested category comes with a button to evaluate using its weight vector. |
-| Architecture | Hand-made SVG: actors → React SPA → Supabase (GoTrue, PostgREST, Realtime, PostgreSQL 15 with RLS and an immutable log table). |
-
-"Ink and halftone" style inspired by manga panels. Light and dark themes, keyboard accessible, honours `prefers-reduced-motion`.
-
-## Run it
+## How to use it
 
 No install or build step.
 
 ```bash
 python3 -m http.server 8000   # or: npm start
-# open http://localhost:8000
+# open http://localhost:8000 (tool) and http://localhost:8000/proceso/
 ```
 
-Engine tests (Node 20+):
+Tests (Node 20+):
 
 ```bash
 node --test   # or: npm test
 ```
 
-Ready for GitHub Pages (branch `main`, root folder).
+Deployable as-is on GitHub Pages (`main` branch, root folder).
+
+## Where it comes from
+
+Undergraduate thesis **"Proposal for a university IT consulting office at Universidad ECCI based on free software"** (Systems Engineering, Universidad ECCI, 2026, SigestECCI research group). Formulas 3.1–3.3, the 12 criteria with their anchor descriptors (Table 5.6.2) and the 11 weight vectors (Table 5.6.1 and Annex H.1) come from it. Anything computed in this version (the criterion holding you back, the intermediate cut-offs of the GitHub suggestions, the errata counts) is labelled as such in `/proceso/`.
 
 ## Credits
 
-- **Mario Puerta** (Mario Alejandro Puerta Alarcón): co-author of the research and development.
+- **Mario Puerta** (Mario Alejandro Puerta Alarcón): co-author of the research and development. [GitHub](https://github.com/ale0009)
 - **David Rincón "Kuronoma"** (David Alexander Rincón Corredor): co-author of the research and development. [LinkedIn](https://www.linkedin.com/in/davidalexanderrinconcorredorkuronoma/)
 
-Original research: undergraduate thesis, Universidad ECCI (2026), SigestECCI research group. This is an independent showcase version created by Mario Puerta and David Rincón "Kuronoma"; it is not actively maintained.
-
-## License
+## Licence
 
 Code under [MIT](LICENSE) © 2026 Mario Alejandro Puerta Alarcón and David Alexander Rincón Corredor.

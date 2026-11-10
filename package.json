@@ -2,7 +2,7 @@
   "name": "consultorio-foss",
   "version": "1.0.0",
   "private": true,
-  "description": "Versión de muestra del Consultorio de Informática basado en software libre: sitio de la investigación y demo del motor RCI.",
+  "description": "¿Es APTO? Evaluador de software libre con la rúbrica RCI, y la investigación que lo sustenta en /proceso/.",
   "type": "module",
   "scripts": {
     "test": "node --test",
