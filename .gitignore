@@ -1,0 +1,10 @@
+# Material fuente (tesis, anexos): nunca se versiona
+fuente/
+fuente.txt
+*.pdf
+# Notas locales de traspaso
+HANDOFF.md
+# Varios
+node_modules/
+.DS_Store
+*.log
