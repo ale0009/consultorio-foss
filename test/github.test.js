@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parsearRepo, ultimaPagina, sugerirLicencia, sugerirMadurez, sugerirComunidad,
-  sugerirDesdeRepo, consultarRepo, ErrorGithub,
+  sugerirDesdeRepo, consultarRepo, ErrorGithub, mapearBusqueda, buscarEnGithub, cupoBusqueda, ordenarResultados,
 } from '../js/github.js';
 import { GITHUB_RESPALDO } from '../js/datos.js';
 
@@ -101,4 +101,71 @@ test('consultarRepo sigue si falla el conteo de contribuidores', async () => {
   const d = await consultarRepo({ dueno: 'a', repo: 'b' }, fetchFalso);
   assert.equal(d.contribuidores, null);
   assert.equal(d.licenciaSpdx, null);
+});
+
+/* ---------- Búsqueda de repositorios ---------- */
+
+const ITEM_ARTCRAFT = {
+  full_name: 'storytold/artcraft', name: 'artcraft', html_url: 'https://github.com/storytold/artcraft',
+  homepage: 'https://getartcraft.com', description: 'ArtCraft is an intentional crafting engine for artists, designers, and filmmakers',
+  topics: ['3d-graphics', 'ai'], license: { spdx_id: 'Apache-2.0' }, stargazers_count: 40479,
+  created_at: '2022-03-31T23:19:12Z', pushed_at: '2026-11-10T10:00:00Z', archived: false, fork: false,
+};
+
+test('mapearBusqueda toma los campos útiles y tolera vacíos', () => {
+  const [a] = mapearBusqueda({ total_count: 1, items: [ITEM_ARTCRAFT] });
+  assert.deepEqual(a, {
+    repo: 'storytold/artcraft', nombre: 'artcraft', url: 'https://github.com/storytold/artcraft', sitio: 'https://getartcraft.com',
+    descripcion: ITEM_ARTCRAFT.description, temas: ['3d-graphics', 'ai'], licenciaSpdx: 'Apache-2.0', estrellas: 40479,
+    creado: '2022-03-31T23:19:12Z', ultimoPush: '2026-11-10T10:00:00Z', archivado: false, fork: false,
+  });
+  const [b] = mapearBusqueda({ items: [{ full_name: 'a/b', name: 'b', html_url: 'u', description: null, license: null, homepage: '' }] });
+  assert.equal(b.descripcion, '');
+  assert.equal(b.licenciaSpdx, null);
+  assert.equal(b.sitio, null);
+  assert.deepEqual(b.temas, []);
+  assert.deepEqual(mapearBusqueda(null), []);
+  assert.deepEqual(mapearBusqueda({ message: 'x' }), []);
+});
+
+test('buscarEnGithub arma la URL de búsqueda y mapea la respuesta (fetch simulado)', async () => {
+  let pedida;
+  const fetchFalso = async (url) => { pedida = url; return respuesta(200, { items: [ITEM_ARTCRAFT] }); };
+  const r = await buscarEnGithub(' art craft ', fetchFalso);
+  assert.ok(pedida.startsWith('https://api.github.com/search/repositories?q='));
+  assert.ok(pedida.includes(encodeURIComponent('art craft fork:false')));
+  assert.ok(pedida.includes('per_page=8'));
+  assert.equal(r[0].repo, 'storytold/artcraft');
+  assert.deepEqual(await buscarEnGithub('', fetchFalso), []);
+});
+
+test('buscarEnGithub: límite de 10 por minuto, red caída y otros errores', async () => {
+  const reset = String(Math.ceil(Date.now() / 1000) + 42);
+  await assert.rejects(
+    buscarEnGithub('krita', async () => respuesta(403, {}, { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': reset })),
+    (e) => e instanceof ErrorGithub && e.tipo === 'limite' && /10 búsquedas por minuto/.test(e.message) && e.esperaMs > 30_000,
+  );
+  await assert.rejects(buscarEnGithub('krita', async () => respuesta(429, {})), (e) => e.tipo === 'limite');
+  await assert.rejects(buscarEnGithub('krita', async () => { throw new TypeError('fetch failed'); }), (e) => e.tipo === 'red');
+  await assert.rejects(buscarEnGithub('krita', async () => respuesta(403, {}, { 'x-ratelimit-remaining': '5' })), (e) => e.tipo === 'rechazo');
+  await assert.rejects(buscarEnGithub('krita', async () => respuesta(422, {})), (e) => e.tipo === 'consulta');
+  await assert.rejects(buscarEnGithub('krita', async () => respuesta(500, {})), (e) => e.tipo === 'http' && /500/.test(e.message));
+});
+
+test('cupoBusqueda deja 10 por minuto y calcula la espera', () => {
+  const t0 = 1_000_000;
+  const nueve = Array.from({ length: 9 }, (_, i) => t0 + i * 1000);
+  assert.equal(cupoBusqueda(nueve, t0 + 10_000).permitido, true);
+  const diez = [...nueve, t0 + 9000];
+  const c = cupoBusqueda(diez, t0 + 10_000);
+  assert.equal(c.permitido, false);
+  assert.equal(c.esperaMs, 50_000); // la más vieja (t0) sale de la ventana en t0 + 60 s
+  assert.equal(cupoBusqueda(diez, t0 + 60_000).permitido, true);
+  assert.equal(cupoBusqueda([], t0).recientes.length, 0);
+});
+
+test('ordenarResultados manda al final los archivados y los que no tienen descripción', () => {
+  const it = (repo, descripcion, archivado = false) => ({ repo, descripcion, archivado });
+  const orden = ordenarResultados([it('a/vacio', ''), it('b/bueno', 'x'), it('c/archivado', 'x', true), it('d/bueno2', 'y')]).map((x) => x.repo);
+  assert.deepEqual(orden, ['b/bueno', 'd/bueno2', 'a/vacio', 'c/archivado']);
 });

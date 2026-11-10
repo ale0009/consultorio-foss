@@ -37,6 +37,44 @@
 .sug { display: grid; grid-template-columns: auto 1fr auto; gap: .6rem; align-items: center; font-size: .9rem; }
 .sug__texto span { color: var(--tinta-suave); }
 
+/* Buscador de software (combobox) */
+.buscador { position: relative; }
+.buscador__panel {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; width: min(560px, calc(100vw - 2.5rem));
+  background: var(--fondo-viñeta); border: 3px solid var(--tinta); box-shadow: var(--sombra);
+  max-height: min(70vh, 460px); overflow-y: auto; overscroll-behavior: contain;
+}
+.buscador__panel[hidden] { display: none; }
+.buscador__lista { list-style: none; margin: 0; padding: 0; }
+.buscador__grupo { font-family: var(--fuente-mono); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--tinta-suave); padding: .45rem .7rem .2rem; border-top: 2px dashed var(--trama); }
+.buscador__grupo:first-child { border-top: 0; }
+.opcion { display: grid; gap: .1rem; padding: .45rem .7rem; cursor: pointer; border-left: 4px solid transparent; }
+.opcion[aria-selected="true"], .opcion:hover { background: var(--papel-2); border-left-color: var(--rojo); }
+.opcion__fila { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; }
+.opcion__nombre { font-weight: 700; }
+.opcion__meta { font-family: var(--fuente-mono); font-size: .75rem; color: var(--tinta-suave); }
+.opcion__que { font-size: .84rem; color: var(--tinta-suave); line-height: 1.35; overflow-wrap: anywhere; }
+.opcion--accion .opcion__nombre { color: var(--cian-texto); }
+.buscador__estado:empty { display: none; }
+.buscador__estado { padding: .5rem .7rem; font-size: .85rem; border-top: 2px dashed var(--trama); }
+.buscador__estado .aviso-limite { color: var(--rojo-texto); font-weight: 600; margin: 0; }
+.buscador__estado p { margin: 0; }
+
+/* Tarjeta «qué es y para qué sirve» */
+.que-es { margin-top: .8rem; border: 2px solid var(--tinta); background: var(--papel-2); padding: .65rem .8rem; position: relative; }
+.que-es[hidden] { display: none; }
+.que-es__cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; margin: 0 0 .2rem; }
+.que-es__etq { font-family: var(--fuente-mono); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--rojo-texto); }
+.que-es__nombre { font-family: var(--fuente-titulo); font-size: 1.15rem; margin: 0; font-weight: 400; }
+.que-es__texto { margin: 0 0 .4rem; }
+.que-es__datos { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin: 0; font-size: .85rem; }
+.que-es__datos div { display: flex; gap: .3rem; align-items: baseline; }
+.que-es__datos dt { color: var(--tinta-suave); }
+.que-es__datos dd { margin: 0; font-family: var(--fuente-mono); font-weight: 600; overflow-wrap: anywhere; }
+.que-es__aviso { margin: .45rem 0 0; font-size: .85rem; border-left: 4px solid var(--ambar); padding-left: .5rem; }
+.que-es__nota { margin: .4rem 0 0; font-size: .82rem; color: var(--tinta-suave); }
+.que-es__origen { font-family: var(--fuente-mono); font-size: .72rem; border: 2px solid currentColor; padding: 0 .3rem; color: var(--cian-texto); }
+
 /* Tablero: los 12 criterios */
 .tablero { border: 0; padding: 0; margin: 1.1rem 0 0; min-width: 0; }
 .tablero__leyenda { font-family: var(--fuente-titulo); font-size: 1.05rem; padding: 0; margin-bottom: .6rem; }

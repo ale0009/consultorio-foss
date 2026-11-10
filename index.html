@@ -41,15 +41,22 @@
 
         <div class="ficha viñeta">
           <div class="ficha__fila">
-            <label class="campo campo--nombre">
-              <span class="campo__etiqueta">Software</span>
-              <input id="nombre" type="text" maxlength="60" autocomplete="off" placeholder="Ej.: Nextcloud">
-            </label>
+            <div class="campo campo--nombre buscador">
+              <label class="campo__etiqueta" for="nombre">Software <span class="campo__nota">(busca en el catálogo o en GitHub)</span></label>
+              <input id="nombre" type="text" maxlength="60" autocomplete="off" spellcheck="false" placeholder="Ej.: Krita, Moodle, Odoo…"
+                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sugerencias" aria-describedby="buscador-ayuda">
+              <p class="sr-only" id="buscador-ayuda">Escribe para ver sugerencias; usa las flechas para moverte y Enter para elegir.</p>
+              <div class="buscador__panel" id="buscador-panel" hidden>
+                <ul class="buscador__lista" id="sugerencias" role="listbox" aria-label="Software sugerido"></ul>
+                <div class="buscador__estado" id="buscador-estado" aria-live="polite"></div>
+              </div>
+            </div>
             <label class="campo">
               <span class="campo__etiqueta">Categoría <span class="campo__nota">(cambia los pesos)</span></span>
               <select id="categoria"></select>
             </label>
           </div>
+          <section class="que-es" id="que-es" aria-live="polite" aria-label="Qué es este software" hidden></section>
           <div class="ficha__barra">
             <p class="insignia-ejemplo" id="insignia-ejemplo"><span class="etiqueta-ejemplo">Ejemplo</span> LibreOffice con los porcentajes de un caso de prueba de la investigación. Cámbialo todo.</p>
             <div class="ficha__botones">
@@ -68,7 +75,7 @@
                 </label>
                 <button type="button" class="boton boton--chico" id="consultar">Consultar</button>
               </div>
-              <p class="pie">Usa la API pública de GitHub, sin cuenta: 60 consultas por hora. Solo sugiere C1, C2 y C3, los criterios que la investigación marca como extraíbles del repositorio.</p>
+              <p class="pie">Usa la API pública de GitHub, sin cuenta: 60 consultas por hora (y 10 búsquedas por minuto en el buscador). Solo sugiere C1, C2 y C3, los criterios que la investigación marca como extraíbles del repositorio.</p>
               <div id="github-estado" aria-live="polite"></div>
             </div>
           </details>

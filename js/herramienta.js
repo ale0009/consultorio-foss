@@ -2,7 +2,8 @@
 // datos.js y github.js (funciones puras con pruebas); aquí solo se conecta el DOM.
 import { CRITERIOS, CATEGORIAS, EJEMPLO_LIBREOFFICE, NIVELES, GITHUB_RESPALDO, descriptorNivel } from './datos.js';
 import { evaluar, puntajeDesdePorcentaje, criterioQueMasFrena } from './motor.js';
-import { parsearRepo, consultarRepo, sugerirDesdeRepo } from './github.js';
+import { parsearRepo, consultarRepo, sugerirDesdeRepo, buscarEnGithub, cupoBusqueda } from './github.js';
+import { CATALOGO, CATALOGO_FECHA, filtrarCatalogo, buscarPorRepo, sugerirCategoria, normalizar } from './catalogo.js';
 import { iniciarTema } from './tema.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -12,7 +13,7 @@ const categoria = (id) => CATEGORIAS.find((c) => c.id === id);
 const sinMovimiento = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const PUNTAJES_EJEMPLO = EJEMPLO_LIBREOFFICE.porcentajes.map(puntajeDesdePorcentaje);
-const estado = { puntajes: [...PUNTAJES_EJEMPLO], categoria: EJEMPLO_LIBREOFFICE.categoria, esEjemplo: true, sugeridos: new Set() };
+const estado = { puntajes: [...PUNTAJES_EJEMPLO], categoria: EJEMPLO_LIBREOFFICE.categoria, esEjemplo: true, sugeridos: new Set(), seleccion: null };
 let clasePrevia = null;
 
 /* ---------- Tablero de criterios ---------- */
@@ -162,6 +163,10 @@ function cargarEjemplo() {
   $('#categoria').value = estado.categoria;
   $('#nombre').value = EJEMPLO_LIBREOFFICE.nombre;
   $('#insignia-ejemplo').hidden = false;
+  $('#repo').value = 'LibreOffice/core';
+  $('#github-estado').innerHTML = '';
+  estado.seleccion = deCatalogo(CATALOGO.find((e) => e.n === EJEMPLO_LIBREOFFICE.nombre));
+  pintarQueEs(estado.seleccion);
   pintarPesos();
   ponerTodo(PUNTAJES_EJEMPLO);
   recalcular();
@@ -170,6 +175,8 @@ function cargarEjemplo() {
 function limpiar() {
   estado.sugeridos.clear();
   $('#nombre').value = '';
+  estado.seleccion = null;
+  pintarQueEs(null);
   salirDeEjemplo();
   ponerTodo(Array(12).fill(3));
   recalcular();
@@ -222,6 +229,18 @@ function pintarGithub(datos, { respaldo = false, ahora = Date.now() } = {}) {
     if (!$('#nombre').value.trim()) $('#nombre').value = datos.repo.split('/')[1];
     recalcular();
   });
+  return sug;
+}
+
+/** Aplica de una vez las sugerencias C1–C3 (las marca como «sugerido»). */
+function aplicarSugerencias(sug) {
+  ['C1', 'C2', 'C3'].forEach((id, k) => {
+    if (!sug[id].puntaje) return;
+    estado.puntajes[k] = sug[id].puntaje;
+    estado.sugeridos.add(k);
+    pintarCriterio(k);
+  });
+  recalcular();
 }
 
 function pintarErrorGithub(mensaje) {
@@ -235,7 +254,7 @@ function pintarErrorGithub(mensaje) {
   });
 }
 
-async function consultar() {
+async function consultar({ aplicar = false } = {}) {
   const boton = $('#consultar');
   const destino = parsearRepo($('#repo').value);
   if (!destino) {
@@ -247,13 +266,230 @@ async function consultar() {
   boton.textContent = 'Consultando…';
   $('#github-estado').innerHTML = `<p class="cargando">Preguntando a GitHub por ${esc(destino.dueno)}/${esc(destino.repo)}…</p>`;
   try {
-    pintarGithub(await consultarRepo(destino));
+    const datos = await consultarRepo(destino);
+    const sug = pintarGithub(datos);
+    if (aplicar && parsearRepo($('#repo').value)?.repo === destino.repo) aplicarSugerencias(sug);
   } catch (e) {
     pintarErrorGithub(e.message);
   } finally {
     boton.disabled = false;
     boton.textContent = 'Consultar';
   }
+}
+
+/* ---------- Buscador de software: catálogo local + búsqueda en vivo en GitHub ---------- */
+const fechaCatalogo = new Date(`${CATALOGO_FECHA}T12:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+const buscador = { opciones: [], activo: -1, cache: new Map(), marcas: [], bloqueoHasta: 0, buscando: null, temporizador: null, aviso: '' };
+
+const deCatalogo = (e) => e && ({ origen: 'catalogo', nombre: e.n, que: e.que, lic: e.lic, repo: e.repo, url: e.url, cat: e.cat, aviso: e.aviso ?? null, semilla: Boolean(e.s) });
+
+function deGithub(item) {
+  const enCatalogo = buscarPorRepo(item.repo);
+  if (enCatalogo) return deCatalogo(enCatalogo);
+  return {
+    origen: 'github', nombre: item.nombre, que: item.descripcion, lic: item.licenciaSpdx ?? 'sin licencia detectada',
+    repo: item.repo, url: item.url, sitio: item.sitio, estrellas: item.estrellas, ultimoPush: item.ultimoPush,
+    catSugerida: sugerirCategoria({ nombre: item.nombre, descripcion: item.descripcion, temas: item.temas }),
+    aviso: item.archivado ? 'El repositorio está archivado: ya no recibe cambios.' : null,
+  };
+}
+
+function abrirPanel(abierto) {
+  $('#buscador-panel').hidden = !abierto;
+  $('#nombre').setAttribute('aria-expanded', String(abierto));
+  if (!abierto) { buscador.activo = -1; $('#nombre').removeAttribute('aria-activedescendant'); }
+}
+
+const resumenGithub = (it) => [
+  `★ ${it.estrellas.toLocaleString('es-CO')}`,
+  it.licenciaSpdx ?? 'sin licencia',
+  `último cambio ${fecha(it.ultimoPush)}`,
+].join(' · ');
+
+function pintarOpciones() {
+  const texto = $('#nombre').value;
+  const q = normalizar(texto);
+  if (!q) { abrirPanel(false); return; }
+  const locales = filtrarCatalogo(texto, CATALOGO, 6);
+  const enGithub = buscador.cache.get(q);
+  const opciones = [];
+  let html = '';
+  if (locales.length) {
+    html += `<li class="buscador__grupo" role="presentation">Catálogo · ${locales.length}</li>`;
+    locales.forEach((e) => {
+      opciones.push({ tipo: 'sel', sel: deCatalogo(e) });
+      const cat = categoria(e.cat).nombre;
+      html += `<li class="opcion" role="option" id="op-${opciones.length - 1}" data-i="${opciones.length - 1}" aria-selected="false">
+        <span class="opcion__fila"><span class="opcion__nombre">${esc(e.n)}</span><span class="opcion__meta">${esc(cat)} · ${esc(e.lic)}</span></span>
+        <span class="opcion__que">${esc(e.que)}</span></li>`;
+    });
+  }
+  if (enGithub) {
+    const ya = new Set(locales.map((e) => e.repo?.toLowerCase()));
+    const nuevos = enGithub.filter((it) => !ya.has(it.repo.toLowerCase()));
+    html += `<li class="buscador__grupo" role="presentation">En GitHub · ${nuevos.length ? 'elige el correcto' : 'nada nuevo'}</li>`;
+    nuevos.forEach((it) => {
+      opciones.push({ tipo: 'sel', sel: deGithub(it) });
+      html += `<li class="opcion" role="option" id="op-${opciones.length - 1}" data-i="${opciones.length - 1}" aria-selected="false">
+        <span class="opcion__fila"><span class="opcion__nombre">${esc(it.repo)}</span><span class="opcion__meta">${esc(resumenGithub(it))}</span></span>
+        <span class="opcion__que">${esc(it.descripcion || 'Sin descripción en GitHub.')}${it.archivado ? ' · archivado' : ''}</span></li>`;
+    });
+  } else if (q.length >= 2 && buscador.buscando !== q) {
+    opciones.push({ tipo: 'buscar', q: texto.trim() });
+    html += `<li class="opcion opcion--accion" role="option" id="op-${opciones.length - 1}" data-i="${opciones.length - 1}" aria-selected="false">
+      <span class="opcion__fila"><span class="opcion__nombre">Buscar «${esc(texto.trim())}» en GitHub</span><span class="opcion__meta">nombre, descripción, estrellas y licencia</span></span></li>`;
+  }
+  buscador.opciones = opciones;
+  buscador.activo = -1;
+  $('#sugerencias').innerHTML = html;
+  $('#nombre').removeAttribute('aria-activedescendant');
+  let estadoHtml = buscador.aviso;
+  if (buscador.buscando === q) estadoHtml = `<p class="cargando">Buscando «${esc(texto.trim())}» en GitHub…</p>`;
+  else if (!locales.length && !enGithub && !buscador.aviso) estadoHtml = '<p>No está en el catálogo local. Búscalo en GitHub.</p>';
+  $('#buscador-estado').innerHTML = estadoHtml;
+  abrirPanel(true);
+}
+
+function moverActivo(paso) {
+  const n = buscador.opciones.length;
+  if (!n) return;
+  buscador.activo = (buscador.activo + paso + n) % n;
+  $('#sugerencias').querySelectorAll('[role="option"]').forEach((li) => {
+    const si = Number(li.dataset.i) === buscador.activo;
+    li.setAttribute('aria-selected', String(si));
+    if (si) li.scrollIntoView({ block: 'nearest' });
+  });
+  $('#nombre').setAttribute('aria-activedescendant', `op-${buscador.activo}`);
+}
+
+function usarOpcion(i) {
+  const op = buscador.opciones[i];
+  if (!op) return;
+  if (op.tipo === 'buscar') { buscarGithub(op.q); return; }
+  elegir(op.sel);
+}
+
+async function buscarGithub(texto) {
+  const q = normalizar(texto);
+  if (!q || buscador.buscando === q) return;
+  if (buscador.cache.has(q)) { pintarOpciones(); return; }
+  const ahora = Date.now();
+  const cupo = cupoBusqueda(buscador.marcas, ahora);
+  const espera = Math.max(cupo.esperaMs, buscador.bloqueoHasta - ahora);
+  if (espera > 0) {
+    buscador.aviso = `<p class="aviso-limite">GitHub permite 10 búsquedas por minuto sin cuenta. Espera ${Math.ceil(espera / 1000)} s.</p><p>Mientras tanto: elige del catálogo, o escribe «dueño/repo» en «Traer licencia y comunidad desde GitHub».</p>`;
+    pintarOpciones();
+    return;
+  }
+  buscador.marcas = [...cupo.recientes, ahora];
+  buscador.buscando = q;
+  buscador.aviso = '';
+  pintarOpciones();
+  try {
+    buscador.cache.set(q, await buscarEnGithub(texto));
+  } catch (e) {
+    if (e.tipo === 'limite') {
+      buscador.bloqueoHasta = Date.now() + (e.esperaMs ?? 60_000);
+      buscador.aviso = `<p class="aviso-limite">${esc(e.message)}</p><p>Mientras tanto: elige del catálogo, o escribe «dueño/repo» en «Traer licencia y comunidad desde GitHub».</p>`;
+    } else {
+      buscador.aviso = `<p class="aviso-limite">${esc(e.message)}</p><p>Sin conexión: solo se muestra el catálogo local (${CATALOGO.length} proyectos verificados el ${fechaCatalogo}).</p>`;
+    }
+  } finally {
+    buscador.buscando = null;
+  }
+  if (normalizar($('#nombre').value) === q && document.activeElement === $('#nombre')) pintarOpciones();
+}
+
+function pintarQueEs(sel) {
+  const caja = $('#que-es');
+  if (!sel) { caja.hidden = true; caja.innerHTML = ''; return; }
+  const catId = sel.cat ?? sel.catSugerida?.id ?? null;
+  const cat = catId ? categoria(catId).nombre : 'sin deducir';
+  let enlace = '';
+  try { enlace = new URL(sel.sitio || sel.url).hostname.replace(/^www\./, ''); } catch { /* sin enlace */ }
+  const nota = sel.origen === 'catalogo'
+    ? `Categoría del catálogo${sel.semilla ? ' de Mario y David' : ''}; cámbiala arriba si tu uso es otro.`
+    : sel.catSugerida
+      ? `Categoría sugerida por las palabras «${esc(sel.catSugerida.coincidencias.slice(0, 3).join('», «'))}» de su descripción (regla calculada aquí); cámbiala si no encaja.`
+      : 'No pude deducir la categoría: elígela arriba.';
+  const c13 = sel.repo ? 'C1–C3 se precargan desde GitHub' : 'No vive en GitHub: puntúa C1–C3 a mano';
+  caja.innerHTML = `
+    <p class="que-es__cab"><span class="que-es__etq">Qué es</span><span class="que-es__nombre">${esc(sel.nombre)}</span><span class="que-es__origen">${sel.origen === 'catalogo' ? 'del catálogo' : 'desde GitHub'}</span></p>
+    <p class="que-es__texto">${sel.origen === 'github' ? (sel.que ? `<span lang="en">${esc(sel.que)}</span> <span class="campo__nota">(descripción del repositorio)</span>` : 'El repositorio no tiene descripción.') : esc(sel.que)}</p>
+    <dl class="que-es__datos">
+      <div><dt>Licencia</dt><dd>${esc(sel.lic)}</dd></div>
+      <div><dt>Categoría</dt><dd>${esc(cat)}${sel.origen === 'github' && sel.catSugerida ? ' (sugerida)' : ''}</dd></div>
+      ${sel.estrellas != null ? `<div><dt>Estrellas</dt><dd>${sel.estrellas.toLocaleString('es-CO')}</dd></div>` : ''}
+      ${enlace ? `<div><dt>Sitio</dt><dd><a class="enlace" href="${esc(sel.sitio || sel.url)}" rel="noopener" target="_blank">${esc(enlace)}</a></dd></div>` : ''}
+    </dl>
+    ${sel.aviso ? `<p class="que-es__aviso"><b>Ojo:</b> ${esc(sel.aviso)}</p>` : ''}
+    <p class="que-es__nota">${nota} ${c13}; C4–C12 quedan en 3 hasta que los puntúes.</p>`;
+  caja.hidden = false;
+}
+
+function elegir(sel) {
+  estado.seleccion = sel;
+  $('#nombre').value = sel.nombre;
+  abrirPanel(false);
+  salirDeEjemplo();
+  const catId = sel.cat ?? sel.catSugerida?.id;
+  if (catId && categoria(catId)) {
+    estado.categoria = catId;
+    $('#categoria').value = catId;
+    pintarPesos();
+  }
+  estado.sugeridos.clear();
+  ponerTodo(Array(12).fill(3));
+  recalcular();
+  pintarQueEs(sel);
+  if (sel.repo) {
+    $('#repo').value = sel.repo;
+    $('#github').open = true;
+    consultar({ aplicar: true });
+  } else {
+    $('#repo').value = '';
+    $('#github-estado').innerHTML = `<p class="pie">${esc(sel.nombre)} no tiene repositorio en GitHub; su código está en <a class="enlace" href="${esc(sel.url)}" rel="noopener" target="_blank">su sitio</a>. Puntúa C1–C3 a mano.</p>`;
+  }
+}
+
+function iniciarBuscador() {
+  const input = $('#nombre');
+  input.addEventListener('input', () => {
+    if (estado.seleccion && input.value !== estado.seleccion.nombre) { estado.seleccion = null; pintarQueEs(null); }
+    salirDeEjemplo();
+    recalcular();
+    buscador.aviso = '';
+    pintarOpciones();
+    clearTimeout(buscador.temporizador);
+    const q = normalizar(input.value);
+    // Si el catálogo no tiene nada, se pregunta a GitHub solo cuando la persona deja de escribir.
+    if (q.length >= 3 && !filtrarCatalogo(input.value).length && !buscador.cache.has(q)) {
+      buscador.temporizador = setTimeout(() => buscarGithub(input.value), 700);
+    }
+  });
+  input.addEventListener('focus', () => { if (input.value && !estado.seleccion) pintarOpciones(); });
+  input.addEventListener('keydown', (e) => {
+    const abierto = !$('#buscador-panel').hidden;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!abierto) pintarOpciones();
+      moverActivo(e.key === 'ArrowDown' ? 1 : -1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!abierto) return;
+      usarOpcion(buscador.activo >= 0 ? buscador.activo : 0);
+    } else if (e.key === 'Escape' && abierto) {
+      e.preventDefault();
+      abrirPanel(false);
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== input) abrirPanel(false); }, 120));
+  const panel = $('#buscador-panel');
+  panel.addEventListener('pointerdown', (e) => e.preventDefault()); // no quita el foco del campo
+  $('#sugerencias').addEventListener('click', (e) => {
+    const li = e.target.closest('[role="option"]');
+    if (li) usarOpcion(Number(li.dataset.i));
+  });
 }
 
 /* ---------- Barra mini del veredicto (móvil) ---------- */
@@ -270,10 +506,10 @@ function iniciar() {
   sel.innerHTML = CATEGORIAS.map((c) => `<option value="${c.id}">${c.nombre}</option>`).join('');
   pintarTablero();
   sel.addEventListener('change', () => { estado.categoria = sel.value; salirDeEjemplo(); pintarPesos(); recalcular(); });
-  $('#nombre').addEventListener('input', () => { salirDeEjemplo(); recalcular(); });
+  iniciarBuscador();
   $('#ejemplo').addEventListener('click', cargarEjemplo);
   $('#limpiar').addEventListener('click', limpiar);
-  $('#consultar').addEventListener('click', consultar);
+  $('#consultar').addEventListener('click', () => consultar());
   $('#repo').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); consultar(); } });
   iniciarHudMini();
 
@@ -284,6 +520,8 @@ function iniciar() {
     estado.categoria = pedida;
     sel.value = pedida;
     $('#nombre').value = '';
+    estado.seleccion = null;
+    pintarQueEs(null);
     salirDeEjemplo();
     pintarPesos();
     ponerTodo(Array(12).fill(3));

@@ -148,3 +148,76 @@ export async function consultarRepo({ dueno, repo }, fetchFn = globalThis.fetch)
     contribuidores,
   };
 }
+
+/* ---------- Búsqueda de repositorios (para el buscador de software) ---------- */
+
+/** Límite de la API de búsqueda de GitHub sin cuenta: 10 búsquedas por minuto. */
+export const LIMITE_BUSQUEDAS = 10;
+export const VENTANA_BUSQUEDAS = 60_000;
+
+/**
+ * Limitador del lado del navegador: con las marcas de tiempo de las búsquedas hechas,
+ * dice si se puede buscar ya o cuántos milisegundos hay que esperar.
+ */
+export function cupoBusqueda(marcas, ahora = Date.now(), limite = LIMITE_BUSQUEDAS, ventana = VENTANA_BUSQUEDAS) {
+  const recientes = marcas.filter((t) => ahora - t < ventana).sort((a, b) => a - b);
+  if (recientes.length < limite) return { permitido: true, esperaMs: 0, recientes };
+  return { permitido: false, esperaMs: recientes[recientes.length - limite] + ventana - ahora, recientes };
+}
+
+/** Convierte la respuesta de /search/repositories en la lista que muestra la interfaz. */
+export function mapearBusqueda(json) {
+  const items = Array.isArray(json?.items) ? json.items : [];
+  return items.map((d) => ({
+    repo: d.full_name,
+    nombre: d.name,
+    url: d.html_url,
+    sitio: d.homepage || null,
+    descripcion: d.description ?? '',
+    temas: Array.isArray(d.topics) ? d.topics : [],
+    licenciaSpdx: d.license?.spdx_id ?? null,
+    estrellas: d.stargazers_count ?? 0,
+    creado: d.created_at,
+    ultimoPush: d.pushed_at,
+    archivado: Boolean(d.archived),
+    fork: Boolean(d.fork),
+  }));
+}
+
+/**
+ * Deja al final los resultados menos útiles para elegir (archivados o sin descripción),
+ * sin cambiar el orden de relevancia de GitHub entre los demás.
+ */
+export function ordenarResultados(items) {
+  const peso = (it) => (it.archivado ? 2 : 0) + (it.descripcion ? 0 : 1);
+  return items.map((it, i) => ({ it, i })).sort((a, b) => peso(a.it) - peso(b.it) || a.i - b.i).map((x) => x.it);
+}
+
+/**
+ * Busca repositorios públicos por nombre o descripción (1 petición a la API de
+ * búsqueda). Devuelve la lista mapeada o lanza ErrorGithub con un mensaje claro.
+ */
+export async function buscarEnGithub(consulta, fetchFn = globalThis.fetch, porPagina = 8) {
+  const q = String(consulta ?? '').trim();
+  if (!q) return [];
+  const url = `${API}/search/repositories?q=${encodeURIComponent(`${q} fork:false`)}&per_page=${porPagina}`;
+  let r;
+  try {
+    r = await fetchFn(url, { headers: { Accept: 'application/vnd.github+json' } });
+  } catch {
+    throw new ErrorGithub('No hubo conexión con GitHub.', 'red');
+  }
+  if (r.status === 403 || r.status === 429) {
+    if (r.headers.get('x-ratelimit-remaining') === '0' || r.status === 429) {
+      const reset = Number(r.headers.get('x-ratelimit-reset'));
+      const seg = reset ? Math.max(1, Math.ceil(reset - Date.now() / 1000)) : 60;
+      const e = new ErrorGithub(`GitHub permite ${LIMITE_BUSQUEDAS} búsquedas por minuto sin cuenta. Vuelve a intentarlo en unos ${seg} s.`, 'limite');
+      e.esperaMs = seg * 1000;
+      throw e;
+    }
+    throw new ErrorGithub('GitHub rechazó la búsqueda. Intenta de nuevo en unos minutos.', 'rechazo');
+  }
+  if (r.status === 422) throw new ErrorGithub('GitHub no entendió la búsqueda: prueba con otras palabras.', 'consulta');
+  if (!r.ok) throw new ErrorGithub(`GitHub respondió con un error (${r.status}).`, 'http');
+  return ordenarResultados(mapearBusqueda(await r.json()));
+}
