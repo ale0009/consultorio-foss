@@ -408,7 +408,7 @@
           <div class="viñeta cifra" role="listitem"><span class="cifra__valor">13/13</span><span class="cifra__texto">casos de prueba de sistema aprobados (CP-01 a CP-13)</span></div>
           <div class="viñeta cifra" role="listitem"><span class="cifra__valor">8/8</span><span class="cifra__texto">escenarios de aceptación UAT aprobados (IEEE 829)</span></div>
           <div class="viñeta cifra" role="listitem"><span class="cifra__valor">Δ = 0,00</span><span class="cifra__texto">error entre cálculo manual y del sistema en los 6 casos del motor</span></div>
-          <div class="viñeta cifra cifra--acento" role="listitem"><span class="cifra__valor">93,8 %</span><span class="cifra__texto">de cobertura funcional sobre 32 requisitos definidos</span></div>
+          <div class="viñeta cifra cifra--acento" role="listitem"><span class="cifra__valor">93,8 %</span><span class="cifra__texto">de cobertura funcional sobre 32 requisitos definidos, según el resumen; la Tabla 5.11.1 da 96,9 % (ver <a class="enlace" href="#erratas">fe de erratas</a>)</span></div>
         </div>
 
         <div class="rejilla rejilla--2 separado">
@@ -585,12 +585,12 @@
           <article class="viñeta">
             <h3 class="viñeta__titulo">Fe de erratas de la fuente</h3>
             <ol class="erratas">
-              <li><b>LibreOffice, 4,32 o 3,93.</b> El caso CP-09 / E1 reporta P<sub>total</sub> = 4,32. Con sus porcentajes, la fórmula 3.2 y el vector CAT1 da <strong>3,93</strong> (calculado aquí y en las pruebas). El ejemplo usa 3,93.</li>
-              <li><b>Promedio 3,23.</b> El resumen dice P<sub>total</sub> promedio 3,23 y 67 % APTO / 33 % CONDICIONAL. Los seis casos de la Tabla 5.10.3 promedian <strong>3,40</strong> y se reparten 3 APTO, 2 CONDICIONAL y 1 NO APTO (calculado aquí). No se usa ninguna de las dos versiones.</li>
-              <li><b>Cobertura 93,8 % o 96,9 %.</b> El resumen da 93,8 % sobre 32 requisitos; la Tabla 5.11.1, 96,9 % (31 de 32). El texto de esa tabla habla de «dos» requisitos no funcionales pendientes, pero la tabla muestra uno.</li>
-              <li><b>OpenBRR, 8 o 9 de 12.</b> La Tabla 5.8.2 marca 9 «Sí» para OpenBRR pero su total dice 8/12. La gráfica de esta página cuenta 9.</li>
-              <li><b>Personalización «ausente en todos».</b> El texto dice que C7 falta en todos los marcos comparados, pero la misma tabla marca «Sí» para QSOS. Solo C10 falta en los cuatro.</li>
-              <li><b>Categorías de E1–E6.</b> La Tabla 5.10.3 nombra categorías que no coinciden con el catálogo (por ejemplo, «CAT6 — Bases de datos», cuando CAT6 es Comunicación y Colaboración).</li>
+              <li><b>LibreOffice: ¿4,32 o 3,93?</b> <b>El trabajo decía</b> que el caso CP-09 / E1 (LibreOffice) obtiene P<sub>total</sub> = 4,32. <b>Lo correcto:</b> con sus propios porcentajes, la fórmula 3.2 y los pesos de CAT1 da <strong>3,93</strong> (calculado aquí y comprobado en las pruebas). <b>La herramienta usa</b> 3,93 en el ejemplo.</li>
+              <li><b>Promedio de los seis casos.</b> <b>El trabajo decía</b> que el P<sub>total</sub> promedio es 3,23, con 67 % APTO y 33 % CONDICIONAL. <b>Lo correcto:</b> los seis casos de la Tabla 5.10.3 promedian <strong>3,40</strong> y se reparten 3 APTO, 2 CONDICIONAL y 1 NO APTO (calculado aquí). <b>La herramienta</b> no usa ninguna de las dos versiones del promedio.</li>
+              <li><b>Cobertura: ¿93,8 % o 96,9 %?</b> <b>El trabajo decía</b> en el resumen 93,8 % sobre 32 requisitos (30 cumplidos), y en la Tabla 5.11.1, 96,9 % (31 de 32); el texto de esa tabla habla de «dos» requisitos no funcionales pendientes, pero la tabla muestra uno. <b>Lo correcto:</b> no se puede saber cuál de las dos cuentas vale sin la lista de requisitos verificada. <b>Esta página usa</b> el 93,8 % del resumen, marcado como dato de la fuente y con esta errata al lado.</li>
+              <li><b>OpenBRR: ¿8 o 9 de 12?</b> <b>El trabajo decía</b> que OpenBRR cubre 8 de los 12 criterios. <b>Lo correcto:</b> la misma Tabla 5.8.2 marca 9 «Sí» para OpenBRR. <b>La gráfica de esta página cuenta</b> 9.</li>
+              <li><b>Personalización «ausente en todos».</b> <b>El trabajo decía</b> que la personalización (C7) falta en todos los marcos comparados. <b>Lo correcto:</b> la misma tabla marca «Sí» para QSOS; el único criterio que falta en los cuatro es la escalabilidad (C10). <b>Esta página usa</b> la tabla: C7 solo en QSOS, C10 en ninguno.</li>
+              <li><b>Categorías de E1 a E6.</b> <b>El trabajo decía</b>, en la Tabla 5.10.3, categorías que no coinciden con su propio catálogo (por ejemplo, «CAT6 — Bases de datos»). <b>Lo correcto:</b> en el catálogo, CAT6 es Comunicación y Colaboración. <b>La herramienta usa</b> los nombres del catálogo.</li>
             </ol>
           </article>
         </div>
